@@ -37,7 +37,7 @@ export default function Home() {
           </nav>
           <div className="flex items-center gap-2">
             <a
-              href="https://github.com/farelsuryaatmaja/isyara"
+              href="https://github.com/Faralazu/isyara-webapp"
               target="_blank"
               rel="noreferrer"
               className={buttonVariants({ variant: "outline", size: "sm" })}

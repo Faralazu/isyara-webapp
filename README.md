@@ -83,8 +83,8 @@ isyara/
 ### 2. Instalasi
 ```bash
 # Clone repository
-git clone https://github.com/farelsuryaatmaja/isyara.git
-cd isyara
+git clone https://github.com/Faralazu/isyara-webapp.git
+cd isyara-webapp
 
 # Install dependensi
 npm install
