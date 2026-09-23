@@ -97,7 +97,7 @@
 - [x] Project setup (Next.js 16, Tailwind v4, shadcn/ui, Git repo)
 - [x] Landing page dengan hero section & theme showcase
 - [x] Webcam component (permission handler, video stream)
-- [ ] MediaPipe Hand Landmarker integration (Dual-hand detection, max 2 hands)
+- [x] MediaPipe Hand Landmarker integration (Dual-hand detection, max 2 hands)
 - [ ] Canvas overlay untuk menggambar visual skeleton 2 tangan di atas webcam
 - [ ] Basic navigation & routing (Translate, Learn, Dictionary)
 - [ ] Testing framework setup (Vitest + sample unit test)

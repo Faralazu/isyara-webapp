@@ -1,0 +1,266 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Camera,
+  Hand,
+  Sparkles,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Layers,
+  Cpu,
+} from "lucide-react";
+import Link from "next/link";
+import { useWebcam } from "@/hooks/useWebcam";
+import { useMediaPipe } from "@/hooks/useMediaPipe";
+import { WebcamView } from "@/components/webcam/WebcamView";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { MediaPipeResult } from "@/types/camera";
+
+export function TranslateClient() {
+  const webcam = useWebcam();
+  const { videoRef, status: cameraStatus } = webcam;
+
+  const mediaPipe = useMediaPipe();
+  const {
+    isLoading: isMpLoading,
+    isLoaded: isMpLoaded,
+    loadingProgress,
+    error: mpError,
+    errorCode: mpErrorCode,
+    detect,
+  } = mediaPipe;
+
+  const [handResult, setHandResult] = useState<MediaPipeResult | null>(null);
+  const lastLogTimeRef = useRef<number>(0);
+  const animFrameIdRef = useRef<number | null>(null);
+
+  // Active Detection Loop using requestAnimationFrame
+  useEffect(() => {
+    let isActive = true;
+
+    const runDetection = () => {
+      if (!isActive) return;
+
+      if (
+        cameraStatus === "active" &&
+        isMpLoaded &&
+        videoRef.current &&
+        videoRef.current.readyState >= 2
+      ) {
+        const result = detect(videoRef.current);
+
+        if (result && result.landmarks && result.landmarks.length > 0) {
+          setHandResult(result);
+
+          // Log dual-hand coordinates to console periodically (~1 per second) as required for Day 5
+          const now = performance.now();
+          if (now - lastLogTimeRef.current > 1000) {
+            lastLogTimeRef.current = now;
+            console.log(
+              `🖐️ [BISINDO Hand Landmarker] ${result.landmarks.length} tangan terdeteksi (${result.handedness?.join(", ")}):`,
+              result.landmarks
+            );
+          }
+        } else {
+          setHandResult(null);
+        }
+      } else {
+        setHandResult(null);
+      }
+
+      animFrameIdRef.current = requestAnimationFrame(runDetection);
+    };
+
+    if (cameraStatus === "active" && isMpLoaded) {
+      animFrameIdRef.current = requestAnimationFrame(runDetection);
+    } else {
+      setHandResult(null);
+    }
+
+    return () => {
+      isActive = false;
+      if (animFrameIdRef.current) {
+        cancelAnimationFrame(animFrameIdRef.current);
+      }
+    };
+  }, [cameraStatus, isMpLoaded, detect, videoRef]);
+
+  const numHands = handResult?.landmarks?.length || 0;
+  const handednessList = handResult?.handedness || [];
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* Left: Camera Stream Viewport */}
+      <WebcamView webcam={webcam} className="lg:col-span-2" />
+
+      {/* Right: MediaPipe & Hand Tracking Inspector Panel */}
+      <div className="flex flex-col gap-6">
+        {/* MediaPipe AI Engine Status Card */}
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-3 text-xs">
+            <span className="font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Cpu className="size-3.5 text-blue-500" />
+              <span>MediaPipe Tasks Vision</span>
+            </span>
+            <span className="text-[11px] font-mono text-muted-foreground">
+              WASM / GPU
+            </span>
+          </div>
+
+          {isMpLoaded && (
+            <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2.5">
+              <CheckCircle2 className="size-4 shrink-0" />
+              <div>
+                <span className="font-semibold">Model AI Aktif</span>
+                <p className="text-[11px] text-muted-foreground">
+                  Dual-Hand Landmarker siap (Maks. 2 Tangan)
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isMpLoading && (
+            <div className="space-y-2 bg-muted/30 border border-border/60 rounded-lg p-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 text-foreground font-medium">
+                  <Loader2 className="size-3.5 animate-spin text-blue-500" />
+                  <span>Memuat Model MediaPipe...</span>
+                </span>
+                <span className="font-mono text-muted-foreground">
+                  {loadingProgress}%
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-blue-500 transition-all duration-300"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {mpError && (
+            <div className="flex items-start gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2.5">
+              <AlertCircle className="size-4 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold">Gagal Memuat Model</span>
+                {mpErrorCode && (
+                  <span className="ml-1.5 font-mono text-[10px]">
+                    [{mpErrorCode}]
+                  </span>
+                )}
+                <p className="text-[11px] mt-0.5 text-destructive/90">
+                  {mpError}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Live Hand Tracking Status Panel */}
+        <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-xs flex flex-col items-center justify-center text-center">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <Layers className="size-3.5 text-indigo-500" />
+            <span>Deteksi Tangan Real-Time</span>
+          </span>
+
+          {/* Hands Status Pill */}
+          <div className="my-5 flex flex-col items-center">
+            {cameraStatus !== "active" ? (
+              <div className="flex flex-col items-center text-muted-foreground">
+                <div className="size-16 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center mb-2">
+                  <Camera className="size-6 text-muted-foreground/60" />
+                </div>
+                <span className="text-xs font-medium">
+                  Nyalakan kamera untuk mulai deteksi
+                </span>
+              </div>
+            ) : numHands === 0 ? (
+              <div className="flex flex-col items-center text-amber-600 dark:text-amber-400">
+                <div className="size-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-2 animate-pulse">
+                  <Hand className="size-7" />
+                </div>
+                <span className="text-xs font-semibold">
+                  Tunjukkan Tangan ke Kamera
+                </span>
+                <span className="text-[11px] text-muted-foreground mt-0.5">
+                  Mendukung 1 tangan atau 2 tangan (BISINDO)
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-emerald-600 dark:text-emerald-400">
+                <div className="size-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-2 shadow-inner">
+                  <Hand className="size-7" />
+                </div>
+                <span className="text-sm font-bold">
+                  {numHands === 2
+                    ? "2 Tangan Terdeteksi (Dual-Hand)"
+                    : "1 Tangan Terdeteksi (Single-Hand)"}
+                </span>
+                <span className="text-xs font-medium text-foreground mt-0.5">
+                  Sisi: {handednessList.join(" & ")}
+                </span>
+                <span className="text-[11px] text-muted-foreground font-mono mt-1 bg-muted px-2 py-0.5 rounded-md">
+                  {numHands * 21} Titik Koordinat 3D Terlacak
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Live Coordinate Preview when hands detected */}
+          {handResult && handResult.landmarks && (
+            <div className="w-full bg-zinc-950 text-zinc-300 p-3 rounded-xl border border-zinc-800 text-[11px] text-left font-mono space-y-1 overflow-x-auto">
+              <div className="text-zinc-500 text-[10px] uppercase font-bold border-b border-zinc-800 pb-1 flex justify-between">
+                <span>Contoh Koordinat Wrist (Titik 0)</span>
+                <span>x, y, z</span>
+              </div>
+              {handResult.landmarks.map((hand, idx) => (
+                <div key={idx} className="flex justify-between pt-0.5">
+                  <span className="text-blue-400">
+                    Hand {idx + 1} ({handResult.handedness?.[idx] || "N/A"}):
+                  </span>
+                  <span>
+                    {hand[0]?.x.toFixed(2)}, {hand[0]?.y.toFixed(2)},{" "}
+                    {hand[0]?.z.toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 pt-4 border-t border-border/40 w-full flex items-center justify-between text-xs text-muted-foreground">
+            <span>Mode Running</span>
+            <span className="font-mono text-foreground font-semibold">
+              Video (Continuous)
+            </span>
+          </div>
+        </div>
+
+        {/* Dictionary Shortcut Card */}
+        <div className="rounded-2xl border border-border/60 bg-muted/20 p-5">
+          <div className="flex items-center gap-2 font-semibold text-sm text-foreground mb-1">
+            <Hand className="size-4 text-indigo-500" />
+            <span>Belum hafal isyaratnya?</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Buka kamus isyarat BISINDO untuk melihat contoh gestur satu tangan dan dua tangan.
+          </p>
+          <Link
+            href="/dictionary"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "w-full justify-center gap-1.5 text-xs font-semibold"
+            )}
+          >
+            <span>Lihat Kamus Isyarat</span>
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

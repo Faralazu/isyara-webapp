@@ -64,7 +64,10 @@ export interface MediaPipeResult {
 }
 
 export interface UseMediaPipeReturn {
-  /** Apakah model MediaPipe sudah loaded */
+  /** Apakah model MediaPipe sedang dalam proses loading */
+  isLoading: boolean;
+
+  /** Apakah model MediaPipe sudah loaded dan siap digunakan */
   isLoaded: boolean;
 
   /** Loading progress (0-100) */
@@ -72,6 +75,9 @@ export interface UseMediaPipeReturn {
 
   /** Error saat loading */
   error: string | null;
+
+  /** Error code sesuai katalog SRD (E-MP-001, E-MP-002) */
+  errorCode: ErrorCode | null;
 
   /** Detect hands dari video frame. Returns null jika tidak ada tangan */
   detect: (video: HTMLVideoElement) => MediaPipeResult | null;
