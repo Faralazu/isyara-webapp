@@ -95,7 +95,7 @@
 
 ### Phase 1: Foundation (Day 1-7) 🏗️
 - [x] Project setup (Next.js 16, Tailwind v4, shadcn/ui, Git repo)
-- [ ] Landing page dengan hero section & theme showcase
+- [x] Landing page dengan hero section & theme showcase
 - [ ] Webcam component (permission handler, video stream)
 - [ ] MediaPipe Hand Landmarker integration (Dual-hand detection, max 2 hands)
 - [ ] Canvas overlay untuk menggambar visual skeleton 2 tangan di atas webcam

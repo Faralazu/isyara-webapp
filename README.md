@@ -76,11 +76,13 @@ isyara/
 ## 🚀 Memulai (Getting Started)
 
 ### 1. Prasyarat
+
 - Node.js v18+ (disarankan v20+)
 - npm atau pnpm/yarn/bun
 - Git
 
 ### 2. Instalasi
+
 ```bash
 # Clone repository
 git clone https://github.com/Faralazu/isyara-webapp.git
@@ -91,6 +93,7 @@ npm install
 ```
 
 ### 3. Menjalankan Server Development
+
 ```bash
 npm run dev
 ```
@@ -98,6 +101,7 @@ npm run dev
 Buka [http://localhost:3000](http://localhost:3000) di browser Anda.
 
 ### 4. Build Production
+
 ```bash
 npm run build
 npm run start
