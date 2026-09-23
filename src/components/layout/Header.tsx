@@ -1,0 +1,130 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Navigation } from "./Navigation";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Menu, X, Globe } from "lucide-react";
+import { GithubIcon } from "@/components/ui/icons";
+
+export function Header() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [locale, setLocale] = useState<"id" | "en">("id");
+
+  const toggleLanguage = () => {
+    setLocale((prev) => (prev === "id" ? "en" : "id"));
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
+      <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        {/* Brand Logo */}
+        <Link
+          href="/"
+          className="group flex items-center gap-2.5 font-bold text-xl tracking-tight transition-opacity hover:opacity-90 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg py-1 px-1.5"
+          aria-label="Isyara - Beranda"
+        >
+          <span className="text-2xl transition-transform duration-200 group-hover:scale-110 select-none">
+            🤟
+          </span>
+          <div className="flex flex-col">
+            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-300 dark:to-violet-400 font-extrabold text-xl leading-none">
+              Isyara
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground tracking-wider uppercase">
+              AI BISINDO
+            </span>
+          </div>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center">
+          <Navigation orientation="horizontal" />
+        </div>
+
+        {/* Header Right Actions */}
+        <div className="flex items-center gap-2">
+          {/* Bilingual Indicator / Switcher (MOD-I18N ready) */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            title={locale === "id" ? "Beralih ke English" : "Switch to Bahasa Indonesia"}
+            aria-label={`Ganti bahasa. Saat ini: ${locale === "id" ? "Bahasa Indonesia" : "English"}`}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "h-8 px-2 text-xs font-semibold gap-1 text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Globe className="size-3.5" />
+            <span className="uppercase">{locale}</span>
+          </button>
+
+          {/* GitHub Repository Link */}
+          <a
+            href="https://github.com/Faralazu/isyara-webapp"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Buka repository Isyara di GitHub"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "h-8 px-2.5 gap-1.5 text-xs font-medium hidden sm:inline-flex"
+            )}
+          >
+            <GithubIcon className="size-3.5" />
+            <span>GitHub</span>
+          </a>
+
+          {/* Mobile Menu Hamburger Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-expanded={isMobileMenuOpen}
+            aria-label={isMobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
+            aria-controls="mobile-nav-menu"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "size-9 p-0 md:hidden text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {isMobileMenuOpen ? (
+              <X className="size-5" />
+            ) : (
+              <Menu className="size-5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Drawer / Dropdown */}
+      {isMobileMenuOpen && (
+        <div
+          id="mobile-nav-menu"
+          className="border-b border-border/50 bg-background/95 px-4 pt-3 pb-5 backdrop-blur-lg md:hidden animate-in slide-in-from-top-2 duration-200"
+        >
+          <div className="mb-3">
+            <Navigation
+              orientation="vertical"
+              onItemClick={() => setIsMobileMenuOpen(false)}
+            />
+          </div>
+
+          <div className="pt-3 border-t border-border/40 flex items-center justify-between">
+            <a
+              href="https://github.com/Faralazu/isyara-webapp"
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "w-full justify-center gap-2 text-xs"
+              )}
+            >
+              <GithubIcon className="size-4" />
+              <span>Buka di GitHub</span>
+            </a>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

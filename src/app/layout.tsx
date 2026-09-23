@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Header, Footer } from "@/components/layout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,18 +14,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Isyara — AI BISINDO Sign Language Translator",
+  title: {
+    template: "%s | Isyara",
+    default: "Isyara — AI BISINDO Sign Language Translator",
+  },
   description:
-    "Penerjemah Bahasa Isyarat Indonesia (BISINDO) real-time berbasis AI langsung di browser.",
+    "Penerjemah Bahasa Isyarat Indonesia (BISINDO) real-time berbasis AI on-device langsung di browser. Mendukung isyarat satu tangan dan dua tangan.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-primary/20">
+        <Header />
+        <div className="flex-1 flex flex-col">{children}</div>
+        <Footer />
+      </body>
     </html>
   );
 }
