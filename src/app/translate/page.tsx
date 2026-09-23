@@ -3,6 +3,7 @@ import { Camera, Sparkles, AlertCircle, Info, Hand, ArrowRight } from "lucide-re
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { WebcamView } from "@/components/webcam/WebcamView";
 
 export const metadata: Metadata = {
   title: "Penerjemah Kamera",
@@ -31,50 +32,8 @@ export default function TranslatePage() {
 
       {/* Main Grid: Webcam View & Result Panel */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left / Center: Camera Stream Viewport (Placeholder for Day 4-6) */}
-        <div className="lg:col-span-2 flex flex-col rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
-          <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-3 text-xs">
-            <div className="flex items-center gap-2 font-medium">
-              <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
-              <span>Status Kamera: Siap Diaktifkan</span>
-            </div>
-            <span className="text-muted-foreground">Maks. 2 Tangan (Dual-Hand)</span>
-          </div>
-
-          {/* Video Placeholder Area */}
-          <div className="relative aspect-video w-full bg-zinc-950 flex flex-col items-center justify-center text-zinc-400 p-6 text-center">
-            <div className="size-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4 shadow-inner">
-              <Camera className="size-8" />
-            </div>
-            <h3 className="text-base font-semibold text-zinc-200">
-              Kamera Belum Dimulai
-            </h3>
-            <p className="text-xs text-zinc-400 mt-1 max-w-sm">
-              Klik tombol di bawah untuk mengizinkan akses webcam. Seluruh video diproses 100% di browser Anda (privat & aman).
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                className={cn(
-                  buttonVariants({ size: "default" }),
-                  "font-semibold gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                )}
-              >
-                <Camera className="size-4" />
-                <span>Mulai Kamera</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Camera Guidance */}
-          <div className="p-4 bg-muted/10 border-t border-border/40 text-xs text-muted-foreground flex items-start gap-2">
-            <Info className="size-4 text-blue-500 shrink-0 mt-0.5" />
-            <p>
-              <strong>Tips deteksi optimal:</strong> Pastikan ruangan memiliki pencahayaan cukup dan posisikan tangan Anda berjarak sekitar 40–70 cm di depan kamera.
-            </p>
-          </div>
-        </div>
+        {/* Left / Center: Camera Stream Viewport (Day 4: WebcamView) */}
+        <WebcamView className="lg:col-span-2" />
 
         {/* Right: Prediction & Stats Panel */}
         <div className="flex flex-col gap-6">

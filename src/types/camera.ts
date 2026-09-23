@@ -3,6 +3,8 @@
  * Grounded in SRD Section IV Contract 1 & 2
  */
 
+import type { ErrorCode } from "./events";
+
 export type WebcamStatus =
   | "idle"
   | "requesting"
@@ -20,6 +22,9 @@ export interface UseWebcamReturn {
 
   /** Error message jika status === 'error' */
   error: string | null;
+
+  /** Error code jika status === 'error' (E-CAM-001, E-CAM-002, E-CAM-003, dll) */
+  errorCode: ErrorCode | null;
 
   /** Mulai stream webcam. Triggers browser permission dialog */
   startCamera: () => Promise<void>;
