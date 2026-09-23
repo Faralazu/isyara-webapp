@@ -76,7 +76,7 @@
 │                        USER BROWSER                                 │
 │                                                                     │
 │  ┌─── Presentation Layer ───────────────────────────────────────┐  │
-│  │  Next.js App Router (React 18+)                              │  │
+│  │  Next.js 16 App Router (React 19)                            │  │
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐   │  │
 │  │  │ Landing  │ │Translate │ │  Learn   │ │  Dictionary  │   │  │
 │  │  │ Page     │ │ Page     │ │  Pages   │ │  Pages       │   │  │
@@ -88,9 +88,9 @@
 │  │  ┌──────────────┐   │   ┌───────┴────────┐                 │  │
 │  │  │ MediaPipe    │◀──┘   │ TensorFlow.js  │                 │  │
 │  │  │ Hand         │       │ Classifier     │                 │  │
-│  │  │ Landmarker   │──────▶│ (Dense NN)     │                 │  │
-│  │  │ (WASM)       │ 63    │ WebGL backend  │                 │  │
-│  │  │              │floats │                │                 │  │
+│  │  │ Landmarker   │──────▶│ (Dense NN:     │                 │  │
+│  │  │ (Max 2 hands)│ 126   │  126 inputs)   │                 │  │
+│  │  │ (WASM)       │floats │ WebGL backend  │                 │  │
 │  │  └──────────────┘       └───────┬────────┘                 │  │
 │  └─────────────────────────────────┼───────────────────────────┘  │
 │                                     │                              │
@@ -117,12 +117,13 @@
 
 | Keputusan | Alternatif yang Dipertimbangkan | Justifikasi Final |
 |-----------|--------------------------------|-------------------|
-| **Next.js (SSG mode)** vs Vite + React | Vite lebih ringan, tapi Next.js menyediakan file-based routing, built-in image optimization, metadata API, dan SSG out-of-the-box. Vite memerlukan manual routing setup (react-router) dan tidak memiliki built-in SEO support | Next.js meminimalkan boilerplate untuk routing, SEO, dan static export |
-| **@mediapipe/tasks-vision** vs legacy @mediapipe/hands | Legacy API (`@mediapipe/hands`) deprecated sejak 2023. Tasks API menggunakan WASM yang lebih efisien dan mendukung bundling modern | Tasks API adalah satu-satunya pilihan yang di-maintain |
-| **TensorFlow.js** vs ONNX Runtime Web | TF.js memiliki ekosistem yang lebih mature untuk Keras model conversion, WebGL backend yang stabil, dan dokumentasi yang lebih lengkap. ONNX Runtime Web masih dalam fase early adoption untuk browser use cases | TF.js memiliki converter resmi dari Keras (`tensorflowjs_converter`) |
-| **localStorage** vs IndexedDB | Progress data sangat ringan (< 1KB). IndexedDB overkill untuk key-value sederhana. localStorage synchronous API lebih simpel | localStorage cukup dan performant untuk volume data ini |
-| **Tailwind CSS** vs CSS Modules | Tailwind mempercepat iterasi UI dengan utility classes. Cocok untuk solo developer dengan timeline ketat (30 hari) | Speed of development adalah prioritas utama |
-| **Vercel** vs GitHub Pages vs Netlify | Vercel memiliki zero-config Next.js deployment, edge CDN global, dan HTTPS otomatis. GitHub Pages tidak mendukung Next.js natively. Netlify comparable tapi Vercel memiliki first-party Next.js support | Vercel adalah deployment target resmi Next.js |
+| **Next.js 16 (React 19)** vs Vite + React | Next.js menyediakan App Router, SSG otomatis, built-in image optimization, dan integrasi font zero-layout-shift | Meminimalkan boilerplate untuk routing, SEO, dan static export |
+| **@mediapipe/tasks-vision** vs legacy @mediapipe/hands | Legacy API (`@mediapipe/hands`) deprecated sejak 2023. Tasks API menggunakan WASM yang lebih efisien dan mendukung multi-hand tracking hingga 2 tangan | Tasks API adalah satu-satunya pilihan yang di-maintain dan mendukung deteksi 2 tangan |
+| **TensorFlow.js (126-input)** vs ONNX Runtime Web | TF.js memiliki ekosistem mature untuk Keras converter, WebGL backend stabil, dan ukuran model ringkas (< 500KB) | Memiliki converter resmi dari Keras (`tensorflowjs_converter`) |
+| **localStorage** vs IndexedDB | Progress data sangat ringan (< 1KB). IndexedDB overkill untuk key-value sederhana | localStorage synchronous API lebih simpel dan performant untuk volume data ini |
+| **Tailwind CSS v4** vs Tailwind v3 / CSS Modules | Tailwind v4 menghadirkan arsitektur CSS-first (`@import "tailwindcss"`), tanpa konfigurasi JS terpisah, dan build time jauh lebih cepat | Kecepatan build dan kesederhanaan konfigurasi |
+| **shadcn/ui (@base-ui/react)** vs Radix UI | Base UI menawarkan unstyled headless primitives generasi terbaru yang kompatibel penuh dengan React 19 | Kompatibilitas optimal dengan React 19 dan Next.js 16 |
+| **Vercel** vs GitHub Pages vs Netlify | Vercel memiliki zero-config Next.js deployment, edge CDN global, dan HTTPS otomatis | Vercel adalah deployment target resmi Next.js |
 
 ### 2.3 Component Dependency Graph
 
@@ -308,8 +309,8 @@ States enum:
        │ PREDICTING   │ ← requestAnimationFrame loop
        │              │
        │ Pipeline:    │
-       │ 1. Get landmarks (21×3 = 63 floats)
-       │ 2. Normalize (relative to wrist)
+       │ 1. Get landmarks (up to 2 hands)
+       │ 2. Dual-hand normalizer (Left 63 + Right 63 = 126 floats)
        │ 3. model.predict() → [26 probabilities]
        │ 4. Push to SmoothingBuffer(size=7)
        │ 5. Output: { letter, confidence }
@@ -440,8 +441,8 @@ interface UseModelReturn {
   error: string | null;
   
   /** 
-   * Predict huruf dari normalized landmarks.
-   * @param landmarks - Array of 63 floats (21 landmarks × 3 coords)
+   * Predict huruf dari normalized dual-hand landmarks.
+   * @param landmarks - Array of 126 floats (Left: 63 + Right: 63, zero-padded if single-handed)
    * @returns Prediction result dengan letter dan confidence
    */
   predict: (landmarks: number[]) => PredictionResult;
@@ -645,27 +646,37 @@ interface UseLanguageReturn {
 }
 ```
 
-#### Contract 8: Landmark Normalization Function
+#### Contract 8: Dual-Hand Landmark Normalization Function
 
 ```typescript
-// ─── MOD-ML: Preprocessing ───────────────────────────────────
+// ─── MOD-ML: Preprocessing (Dual-Hand) ───────────────────────
 /**
- * Normalize 21 hand landmarks relative to wrist position.
+ * Normalize dual-hand landmarks relative to each hand's wrist.
  * 
  * Algorithm:
- * 1. Subtract wrist (landmark[0]) position from all landmarks
- * 2. Calculate max distance from wrist
- * 3. Divide all coords by max distance
+ * 1. Initialize leftHand [63 zeros] and rightHand [63 zeros]
+ * 2. For each detected hand (up to 2):
+ *    a. Determine handedness ('Left' vs 'Right')
+ *    b. Subtract wrist (landmark[0]) position from its 21 landmarks
+ *    c. Calculate max Euclidean distance from wrist
+ *    d. Scale all coords to [-1.0, 1.0]
+ *    e. Place in corresponding slot (Left: 0..62, Right: 63..125)
+ * 3. Concatenate leftHand and rightHand → flat array of 126 floats
  * 
- * @param landmarks - Raw MediaPipe output: 21 × {x, y, z}
- * @returns Flat array of 63 normalized floats
+ * @param hands - Array of hands (each has 21 landmarks {x, y, z})
+ * @param handedness - Array of handedness strings ('Left' | 'Right')
+ * @returns Flat array of 126 normalized floats
  * 
  * Invariants:
- * - Output length === 63
+ * - Output length === 126
  * - All values in range [-1.0, 1.0]
- * - Wrist position always at origin (0, 0, 0)
+ * - Unused hand slots padded with 0.0
+ * - Detected wrist positions always at origin (0, 0, 0)
  */
-function normalizeLandmarks(landmarks: HandLandmark[]): number[];
+function normalizeLandmarks(
+  hands: HandLandmark[][],
+  handedness?: string[]
+): number[];
 ```
 
 ### 4.2 Event Bus Schema (Internal Events)
@@ -704,49 +715,66 @@ type IsyaraEvent =
 
 ---
 
----
-
 ## V. Logika Bisnis Teknis, Validasi, & Algoritma
 
-### 5.1 Algoritma: Landmark Normalization
+### 5.1 Algoritma: Dual-Hand Landmark Normalization
 
 ```
-FUNCTION normalizeLandmarks(rawLandmarks: HandLandmark[21]) → float[63]
+FUNCTION normalizeLandmarks(rawHands: HandLandmark[][], handedness: string[]) → float[126]
 
   PRECONDITION:
-    rawLandmarks.length === 21
-    Each landmark has {x, y, z} in range [0, 1] (image-relative)
+    rawHands.length ≤ 2
+    Each hand contains 21 landmarks {x, y, z} in range [0, 1]
 
   ALGORITHM:
-    1. wrist ← rawLandmarks[0]                    // Anchor point
+    1. leftHand  ← array of 63 zeros [0.0, ..., 0.0]
+    2. rightHand ← array of 63 zeros [0.0, ..., 0.0]
 
-    2. FOR i = 0 TO 20:                            // Translate to origin
-         centered[i].x ← rawLandmarks[i].x - wrist.x
-         centered[i].y ← rawLandmarks[i].y - wrist.y
-         centered[i].z ← rawLandmarks[i].z - wrist.z
+    3. FOR handIdx = 0 TO rawHands.length - 1:
+         hand ← rawHands[handIdx]
+         label ← handedness[handIdx] OR (IF handIdx === 0 THEN 'Right' ELSE 'Left')
+         wrist ← hand[0]
 
-    3. maxDist ← 0
-       FOR i = 1 TO 20:                            // Find max euclidean dist
-         dist ← sqrt(centered[i].x² + centered[i].y² + centered[i].z²)
-         IF dist > maxDist THEN maxDist ← dist
+         // Step 3a: Center relative to wrist
+         centered ← []
+         FOR i = 0 TO 20:
+           centered[i].x ← hand[i].x - wrist.x
+           centered[i].y ← hand[i].y - wrist.y
+           centered[i].z ← hand[i].z - wrist.z
 
-    4. IF maxDist === 0 THEN maxDist ← 1           // Prevent division by zero
+         // Step 3b: Find max distance for scale invariance
+         maxDist ← 0
+         FOR i = 1 TO 20:
+           dist ← sqrt(centered[i].x² + centered[i].y² + centered[i].z²)
+           IF dist > maxDist THEN maxDist ← dist
 
-    5. result ← []
-       FOR i = 0 TO 20:                            // Scale to [-1, 1]
-         result.push(centered[i].x / maxDist)
-         result.push(centered[i].y / maxDist)
-         result.push(centered[i].z / maxDist)
+         IF maxDist === 0 THEN maxDist ← 1.0
 
-    6. RETURN result                                // float[63]
+         // Step 3c: Normalize coordinates to [-1, 1]
+         normHand ← []
+         FOR i = 0 TO 20:
+           normHand.push(centered[i].x / maxDist)
+           normHand.push(centered[i].y / maxDist)
+           normHand.push(centered[i].z / maxDist)
+
+         // Step 3d: Assign to deterministic slot
+         IF label === 'Left' THEN
+           leftHand ← normHand
+         ELSE
+           rightHand ← normHand
+
+    4. result ← leftHand CONCAT rightHand           // float[126]
+
+    5. RETURN result
 
   POSTCONDITION:
-    result.length === 63
-    result[0] === 0, result[1] === 0, result[2] === 0   // Wrist at origin
+    result.length === 126
+    Left hand at indices [0..62], Right hand at indices [63..125]
+    Absent hand slots remain 0.0 (zero-padded)
     ∀ val ∈ result: -1.0 ≤ val ≤ 1.0
 
-  COMPLEXITY: O(n) where n = 21 landmarks
-  LATENCY TARGET: ≤ 0.1ms per call
+  COMPLEXITY: O(n) where n = total landmarks (≤ 42)
+  LATENCY TARGET: ≤ 0.2ms per call
 ```
 
 ### 5.2 Algoritma: Prediction Smoothing Buffer
@@ -894,8 +922,8 @@ FUNCTION checkMastery(letterStats: LetterStats) → boolean
 | Input | Validasi | Aksi jika Invalid |
 |-------|----------|-------------------|
 | Video frame ke MediaPipe | Frame harus memiliki `videoWidth > 0` dan `readyState >= 2` | Skip frame, lanjut ke frame berikutnya |
-| Landmark array ke normalization | Array length harus === 21 | Return `null`, log warning |
-| Normalized array ke TF.js model | Array length harus === 63, semua float | Throw `E-ML-002` |
+| Landmark array ke normalization | Array hands length ≤ 2, masing-masing hand memiliki 21 landmarks | Return `null`, log warning |
+| Normalized array ke TF.js model | Array length harus === 126, semua float | Throw `E-ML-002` |
 | Quiz answer confidence | Harus `number` dalam range `[0, 1]` | Clamp ke `[0, 1]` |
 | localStorage read | Harus valid JSON sesuai `ProgressData` schema | Reset ke default, log `E-STOR-001` |
 | Language preference | Harus `'id'` atau `'en'` | Fallback ke `'id'` |
@@ -971,7 +999,7 @@ FUNCTION checkMastery(letterStats: LetterStats) → boolean
 | **MediaPipe WASM + Model** | CDN (`cdn.jsdelivr.net`) | ~2 MB total, one-time download | App non-functional (no hand detection) | Cache via Service Worker. Fallback: bundle WASM in `public/` as self-hosted backup |
 | **TF.js Model Files** | Self-hosted (`/model/`) | < 1 MB, one-time download | Translate mode non-functional | Precache in Service Worker. Retry with exponential backoff (max 3 attempts) |
 | **BISINDO Reference Images** | Self-hosted (`/images/bisindo/`) | ~1.3 MB total (26 × 50KB) | Dictionary shows broken images | Precache in Service Worker. Lazy load with `loading="lazy"`. Placeholder SVG fallback |
-| **Google Fonts (Inter)** | CDN (`fonts.googleapis.com`) | ~15 KB | Fallback to system font | `font-display: swap` in CSS. System font stack as fallback |
+| **Fonts (Geist Sans & Mono)** | Bundled (`next/font/google`) | 0 KB runtime network | Fallback ke system sans-serif / monospace | Self-hosted & pre-optimized at build time via Next.js |
 | **Vercel CDN** | Hosting | N/A (serves all assets) | Entire app offline | Service Worker enables offline-first after initial visit |
 
 ### 7.2 Pola Toleransi Kegagalan
@@ -1238,15 +1266,17 @@ function usePerformanceMonitor() {
 ### 9.3 Unit Test Cases (Prioritas Tinggi)
 
 ```typescript
-// ─── normalizeLandmarks ──────────────────────────────────────
+// ─── normalizeLandmarks (Dual-Hand) ──────────────────────────
 describe('normalizeLandmarks', () => {
-  it('should return array of length 63');
-  it('should set wrist (index 0-2) to [0, 0, 0]');
-  it('should normalize all values to range [-1, 1]');
-  it('should handle all-zero landmarks without division by zero');
-  it('should be invariant to hand position in frame');
-  it('should be invariant to hand distance from camera');
-  it('should throw if landmarks.length !== 21');
+  it('should return array of length 126');
+  it('should map Left hand to indices 0..62 and Right hand to indices 63..125');
+  it('should zero-pad Left hand slots when only Right hand is detected');
+  it('should zero-pad Right hand slots when only Left hand is detected');
+  it('should return 126 zeros when no hands are detected');
+  it('should set detected wrist landmark to [0, 0, 0] relative coordinates');
+  it('should normalize all coordinates to range [-1, 1]');
+  it('should handle hand scale and distance invariance independently per hand');
+  it('should throw or reject if hand contains fewer or more than 21 landmarks');
 });
 
 // ─── SmoothingBuffer ──────────────────────────────────────────

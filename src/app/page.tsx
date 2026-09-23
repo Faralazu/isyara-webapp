@@ -66,8 +66,9 @@ export default function Home() {
 
           <p className="mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
             <strong>Isyara</strong> menerjemahkan alfabet Bahasa Isyarat Indonesia
-            (BISINDO) secara langsung melalui kamera browser Anda menggunakan
-            teknologi MediaPipe dan TensorFlow.js on-device yang privat dan cepat.
+            (BISINDO) baik isyarat satu tangan maupun dua tangan secara langsung
+            melalui kamera browser Anda menggunakan MediaPipe dan TensorFlow.js
+            on-device yang privat dan cepat.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
@@ -99,10 +100,10 @@ export default function Home() {
               <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <Camera className="size-5" />
               </div>
-              <h3 className="font-semibold text-foreground">Kamera Real-time</h3>
+              <h3 className="font-semibold text-foreground">Kamera Dual-Hand</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Inference langsung di browser dengan MediaPipe Hand Landmarker 21
-                titik tanpa mengirim video ke server.
+                Inference browser-native dengan MediaPipe Tasks Vision mendeteksi
+                hingga 2 tangan (126 titik fitur) tanpa kirim video ke server.
               </p>
             </div>
 
@@ -110,10 +111,10 @@ export default function Home() {
               <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                 <BookOpen className="size-5" />
               </div>
-              <h3 className="font-semibold text-foreground">Modul Belajar</h3>
+              <h3 className="font-semibold text-foreground">Modul Belajar Interaktif</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Pelajari alfabet A-Z dengan panduan visual gestur tangan dan
-                tantangan latihan interaktif.
+                Pelajari alfabet A-Z dengan panduan visual gestur, latihan mandiri,
+                dan evaluasi kuis terukur.
               </p>
             </div>
 
@@ -121,10 +122,10 @@ export default function Home() {
               <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400">
                 <Library className="size-5" />
               </div>
-              <h3 className="font-semibold text-foreground">Kamus Lengkap</h3>
+              <h3 className="font-semibold text-foreground">Kamus 26 Alfabet BISINDO</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Katalog referensi isyarat BISINDO alami yang digunakan sehari-hari
-                oleh komunitas Tuli Indonesia.
+                Katalog referensi isyarat alami satu tangan & dua tangan lengkap
+                dengan deskripsi bilingual ID/EN.
               </p>
             </div>
           </div>

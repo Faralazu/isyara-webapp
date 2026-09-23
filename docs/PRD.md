@@ -148,8 +148,8 @@ Belum ada **web app** yang mampu menerjemahkan **BISINDO** secara real-time meng
 | ID | Prioritas | User Story | Acceptance Criteria (Given-When-Then) |
 |----|-----------|------------|---------------------------------------|
 | F-01 | **Must** | Sebagai user, saya ingin membuka webcam di halaman Translate, sehingga kamera saya aktif dan menampilkan video stream | **Given** user di halaman Translate **When** user klik "Mulai Kamera" **Then** browser meminta izin kamera, dan video stream muncul di layar |
-| F-02 | **Must** | Sebagai user, saya ingin melihat titik-titik landmark di tangan saya, sehingga saya tahu tangan saya terdeteksi | **Given** webcam aktif dan tangan terlihat **When** MediaPipe mendeteksi tangan **Then** 21 titik landmark + garis penghubung digambar di atas video |
-| F-03 | **Must** | Sebagai user, saya ingin melihat huruf BISINDO yang saya tunjukkan, sehingga saya tahu isyarat saya dikenali | **Given** tangan terdeteksi dan model loaded **When** user membentuk isyarat huruf **Then** huruf + confidence score ditampilkan di UI dalam < 200ms |
+| F-02 | **Must** | Sebagai user, saya ingin melihat titik-titik landmark di kedua tangan saya (untuk isyarat 1 atau 2 tangan), sehingga saya tahu pose tangan saya terdeteksi dengan akurat | **Given** webcam aktif dan 1 atau 2 tangan terlihat **When** MediaPipe mendeteksi tangan **Then** hingga 2×21 titik landmark + skeleton digambar di atas video dengan pembeda visual |
+| F-03 | **Must** | Sebagai user, saya ingin melihat huruf BISINDO yang saya tunjukkan (baik isyarat 1 tangan maupun 2 tangan), sehingga saya tahu isyarat saya dikenali | **Given** tangan terdeteksi dan model loaded **When** user membentuk isyarat huruf (1 atau 2 tangan) **Then** huruf + confidence score ditampilkan di UI dalam < 200ms |
 | F-04 | **Must** | Sebagai user, saya ingin prediksi yang stabil (tidak berkedip), sehingga hasil terjemahan mudah dibaca | **Given** prediksi huruf sedang berjalan **When** output berfluktuasi antar frame **Then** sistem menggunakan smoothing buffer dan hanya menampilkan huruf yang konsisten ≥ 5 frame |
 | F-05 | **Must** | Sebagai user, saya ingin melihat semua huruf BISINDO di halaman Kamus, sehingga saya bisa mempelajari bentuk isyarat setiap huruf | **Given** user di halaman Kamus **When** halaman dimuat **Then** 26 kartu huruf (A-Z) ditampilkan dalam grid dengan gambar referensi |
 | F-06 | **Must** | Sebagai user, saya ingin melihat detail setiap huruf, sehingga saya tahu cara membentuk isyarat yang benar | **Given** user klik kartu huruf di Kamus **When** halaman detail terbuka **Then** ditampilkan: gambar referensi besar, instruksi posisi tangan, tipe (satu/dua tangan), dan tombol "Latihan" |
@@ -254,12 +254,12 @@ Belum ada **web app** yang mampu menerjemahkan **BISINDO** secara real-time meng
 | Browser tidak support WebGL | Full-page: "Browser Anda tidak mendukung fitur ini. Gunakan Chrome/Edge terbaru" |
 | Confidence terlalu rendah | Text: "Isyarat tidak jelas. Coba posisikan tangan lebih dekat ke kamera" |
 
-### Panduan Desain Visual
-- **Color palette:** Teal/Cyan primary (asosiasi aksesibilitas & kesehatan), warm accent
-- **Typography:** Inter (heading) + system font stack (body) — cepat load, highly legible
-- **Spacing:** Generous whitespace, minimum tap target 44×44px (WCAG)
-- **Iconography:** Lucide React — consistent, accessible
-- **Motion:** Framer Motion — subtle, purposeful animations (tidak berlebihan)
+#### Panduan Desain Visual
+- **Color palette:** Modern Blue / Indigo primary (`from-blue-600 to-indigo-600`) dengan aksen Violet, mendukung tema terang (light) dan gelap (dark) berkontras tinggi (WCAG AA).
+- **Typography:** Geist Sans (heading & body) + Geist Mono (angka & data teknis) via `next/font/google` — zero layout shift dan performa rendering optimal.
+- **Spacing:** Generous whitespace, minimum tap target 44×44px (WCAG).
+- **Iconography:** Lucide React — consistent, clean, accessible.
+- **Motion:** Framer Motion 13+ — transisi halaman dan mikro-animasi yang halus dan bertujuan.
 
 ---
 
@@ -274,19 +274,21 @@ Belum ada **web app** yang mampu menerjemahkan **BISINDO** secara real-time meng
 │  │ WebRTC     │──▶│ @mediapipe/      │──▶│ TensorFlow.js    │  │
 │  │ getUserMedia│   │ tasks-vision     │   │ (Keras → tfjs)   │  │
 │  │ (Webcam)   │   │ HandLandmarker   │   │ Dense Classifier │  │
-│  └────────────┘   │ 21 landmarks×3   │   │ 63→128→64→26     │  │
-│                    └──────────────────┘   └────────┬─────────┘  │
-│                                                     │           │
-│                                            ┌────────▼─────────┐ │
-│  ┌────────────────────────────┐            │ Prediction       │ │
-│  │ Next.js App Router        │            │ Smoothing Buffer │ │
-│  │ ┌──────────────────────┐  │            │ (mode: 5 frames) │ │
-│  │ │ /         (Landing)  │  │            └────────┬─────────┘ │
-│  │ │ /translate (Webcam)  │  │                     │           │
-│  │ │ /learn     (Lessons) │  │            ┌────────▼─────────┐ │
-│  │ │ /dictionary (Browse) │  │            │ UI: Letter +     │ │
-│  │ └──────────────────────┘  │            │ Confidence %     │ │
-│  └────────────────────────────┘            └──────────────────┘ │
+│  └────────────┘   │ (Max 2 hands,    │   │ 126→256→128→64→26│  │
+│                    │  2×21 landmarks  │   └────────┬─────────┘  │
+│                    │  = 126 coords)   │            │           │
+│                    └──────────────────┘            │           │
+│                                           ┌────────▼─────────┐ │
+│  ┌────────────────────────────┐           │ Prediction       │ │
+│  │ Next.js 16 (React 19)      │           │ Smoothing Buffer │ │
+│  │ ┌──────────────────────┐   │           │ (size 7 frames,  │ │
+│  │ │ /         (Landing)  │   │           │  consensus ≥ 4)  │ │
+│  │ │ /translate (Webcam)  │   │           └────────┬─────────┘ │
+│  │ │ /learn     (Lessons) │   │                    │           │
+│  │ │ /dictionary (Browse) │   │           ┌────────▼─────────┐ │
+│  │ └──────────────────────┘   │           │ UI: Letter +     │ │
+│  │ i18n: ID 🇮🇩 / EN 🇬🇧        │           │ Confidence %     │ │
+│  └────────────────────────────┘           └──────────────────┘ │
 │                                                                 │
 │  ┌─────────────────────────────┐  ┌─────────────────────────┐  │
 │  │ localStorage                │  │ Service Worker (PWA)    │  │
@@ -301,15 +303,15 @@ Belum ada **web app** yang mampu menerjemahkan **BISINDO** secara real-time meng
 │                                                                 │
 │  Python 3.9+                                                    │
 │  ┌────────────┐  ┌────────────────┐  ┌───────────────────────┐ │
-│  │ BISINDO    │─▶│ MediaPipe      │─▶│ TensorFlow/Keras      │ │
-│  │ Dataset    │  │ Landmark       │  │ Train → Export .h5    │ │
-│  │ (Kaggle)   │  │ Extraction     │  │ → tensorflowjs_convert│ │
-│  │ 2600+ imgs │  │ → landmarks.csv│  │ → model.json + bins  │ │
+│  │ BISINDO    │─▶│ MediaPipe Dual │─▶│ TensorFlow/Keras      │ │
+│  │ Dataset    │  │ Hand Extraction│  │ Train (126 features)  │ │
+│  │ (A-Z dual) │  │ Left+Right: 126│  │ → Export .h5          │ │
+│  │ 2600+ imgs │  │ → landmarks.csv│  │ → tensorflowjs_convert│ │
 │  └────────────┘  └────────────────┘  └───────────────────────┘ │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌──────────────── DEPLOYMENT ────────────────────────────────────┐
-│  Vercel (Static Hosting + CDN)                                  │
+│  Vercel (Static Hosting + Edge CDN)                            │
 │  • Auto-deploy from GitHub main branch                          │
 │  • HTTPS enforced                                               │
 │  • Edge caching for static assets                               │
@@ -320,16 +322,18 @@ Belum ada **web app** yang mampu menerjemahkan **BISINDO** secara real-time meng
 
 | Layer | Teknologi | Versi | Justifikasi |
 |-------|-----------|-------|-------------|
-| Framework | Next.js (App Router) | 14+ | SSG, file-based routing, React Server Components |
-| UI Library | shadcn/ui | Latest | Accessible, customizable, Radix primitives |
-| Styling | Tailwind CSS | 3.x | Utility-first, rapid prototyping |
-| Animation | Framer Motion | 11+ | Declarative animations, layout transitions |
-| Hand Detection | @mediapipe/tasks-vision | Latest | Official Google API, WASM-based, 21 3D landmarks |
-| ML Inference | TensorFlow.js | 4.x | Browser-native, WebGL-accelerated |
-| Model Training | TensorFlow/Keras (Python) | 2.15+ | Industry standard, easy export |
+| Framework | Next.js (App Router) | 16+ | SSG, file-based routing, React 19 architecture, superior performance |
+| UI Library | shadcn/ui (`@base-ui/react`) | Latest | Accessible, modern unstyled headless primitives |
+| Styling | Tailwind CSS | v4 | CSS-first configuration, zero-runtime, performant |
+| Animation | Framer Motion | 13+ | Declarative smooth layout transitions |
+| Hand Detection | @mediapipe/tasks-vision | Latest | Browser-native WASM, support hingga 2 tangan (2×21 3D landmarks) |
+| ML Inference | TensorFlow.js | 4.x | Browser-native, WebGL-accelerated inference |
+| Model Training | TensorFlow/Keras (Python) | 2.15+ | Train offline 126 fitur (dual-hand), easy export |
 | Model Conversion | tensorflowjs (pip) | Latest | Official Keras → TF.js converter |
+| Testing | Vitest + React Testing Library | Latest | Unit & integration testing framework |
+| Typography | Geist Sans & Geist Mono | Latest | Native Google font integration via `next/font/google` |
 | Icons | Lucide React | Latest | Tree-shakable, accessible SVG icons |
-| Deploy | Vercel | N/A | Free tier, auto SSL, CDN |
+| Deploy | Vercel | N/A | Free tier, auto SSL, Edge CDN |
 | VCS | Git + GitHub | N/A | Portfolio hosting, CI/CD |
 
 ### Data Schema

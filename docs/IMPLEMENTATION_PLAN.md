@@ -28,22 +28,23 @@
 │  │ Webcam   │──▶│ MediaPipe     │──▶│ TensorFlow.js  │  │
 │  │ Stream   │   │ Hand          │   │ Classifier     │  │
 │  │ (Video)  │   │ Landmarker    │   │ (BISINDO       │  │
-│  │          │   │ (21 points    │   │  Model)        │  │
-│  │          │   │  per hand)    │   │                │  │
+│  │          │   │ (Max 2 hands, │   │  Model: 126    │  │
+│  │          │   │  2×21 points) │   │  inputs)       │  │
 │  └──────────┘   └───────┬───────┘   └───────┬────────┘  │
 │                         │                    │           │
 │                         ▼                    ▼           │
 │               ┌─────────────────┐  ┌─────────────────┐  │
 │               │ Canvas Overlay  │  │ Prediction UI   │  │
 │               │ (Draw landmarks)│  │ (Show letter/   │  │
-│               │                 │  │  word result)   │  │
+│               │                 │  │  confidence %)  │  │
 │               └─────────────────┘  └─────────────────┘  │
 │                                                          │
 │  ┌──────────────────────────────────────────────────┐    │
-│  │              Next.js App (React)                  │    │
-│  │  • Translate Page (real-time detection)           │    │
-│  │  • Learn Page (interactive lessons + quiz)        │    │
-│  │  • Dictionary Page (browse BISINDO signs)         │    │
+│  │              Next.js 16 (React 19)               │    │
+│  │  • Translate Page (dual-hand real-time detection)│    │
+│  │  • Learn Page (guided lessons + practice + quiz) │    │
+│  │  • Dictionary Page (26 BISINDO signs A-Z)        │    │
+│  │  • i18n Bilingual Switch (ID 🇮🇩 / EN 🇬🇧)         │    │
 │  └──────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────┘
 
@@ -53,20 +54,21 @@
 │  Python Pipeline:                                        │
 │  ┌──────────┐   ┌───────────┐   ┌──────────────────┐   │
 │  │ BISINDO  │──▶│ MediaPipe │──▶│ Train Keras      │   │
-│  │ Dataset  │   │ Extract   │   │ Model → Convert  │   │
-│  │ (Kaggle) │   │ Landmarks │   │ to TF.js format  │   │
+│  │ Dataset  │   │ Extract   │   │ Model (126 feat) │   │
+│  │ (A-Z)    │   │ 2 Hands   │   │ Convert to TF.js │   │
 │  └──────────┘   └───────────┘   └──────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Alur Kerja Singkat:
-1. **Webcam** menangkap video tangan user
-2. **MediaPipe Hand Landmarker** mendeteksi 21 titik koordinat (x,y,z) per tangan
-3. **TensorFlow.js model** mengklasifikasikan koordinat tersebut menjadi huruf/kata BISINDO
-4. **UI** menampilkan hasil terjemahan secara real-time
+1. **Webcam** menangkap video gerakan tangan user (mendukung 1 atau 2 tangan sesuai kebutuhan alfabet BISINDO).
+2. **MediaPipe Hand Landmarker** mendeteksi hingga 2 tangan (`max_num_hands: 2`), masing-masing 21 titik koordinat (x,y,z).
+3. **Pipeline Normalisasi:** Mengurutkan tangan berdasarkan *handedness* (Kiri: 63 float, Kanan: 63 float, total 126 float). Tangan yang tidak muncul akan di-padding nilai 0.
+4. **TensorFlow.js model (Dense NN)** mengklasifikasikan 126 fitur menjadi huruf BISINDO A-Z.
+5. **UI & Smoothing Buffer** menampilkan hasil terjemahan secara stabil dan real-time.
 
 > [!NOTE]
-> Semua ML inference terjadi **di browser** (client-side). Tidak perlu server untuk prediksi. Ini membuat app cepat dan bisa dipakai offline setelah pertama kali dimuat.
+> Semua ML inference terjadi **di browser** (client-side). Tidak perlu server untuk prediksi. Ini membuat app cepat, aman secara privasi, dan bisa dipakai offline setelah pertama kali dimuat.
 
 ---
 
@@ -74,56 +76,60 @@
 
 | Layer | Teknologi | Alasan |
 |-------|-----------|--------|
-| **Framework** | Next.js 14+ (App Router) | Modern, SSR/SSG, great DX |
-| **Styling** | Tailwind CSS + shadcn/ui | Rapid prototyping, accessible components |
-| **Hand Detection** | @mediapipe/tasks-vision (MediaPipe Tasks API) | Latest API, browser-native, 21 3D landmarks |
-| **ML Inference** | TensorFlow.js | Run model di browser, no server needed |
-| **Model Training** | Python (TensorFlow/Keras) | Train offline, convert to tfjs |
-| **Dataset** | Kaggle BISINDO Alphabets + custom collection | A-Z static signs |
-| **Animation** | Framer Motion | Smooth UI transitions |
-| **Icons** | Lucide React | Clean, accessible icons |
-| **Deploy** | Vercel | Free, fast, auto-deploy dari GitHub |
-| **Version Control** | Git + GitHub | Portfolio-ready |
+| **Framework** | Next.js 16+ (App Router) | Modern, SSR/SSG, React 19 support, superior DX |
+| **Styling** | Tailwind CSS v4 + shadcn/ui (`@base-ui/react`) | CSS-first config, modern primitives, fast rendering |
+| **Hand Detection** | @mediapipe/tasks-vision (MediaPipe Tasks API) | Browser-native WASM, dual-hand detection (2×21 3D landmarks) |
+| **ML Inference** | TensorFlow.js | Client-side inference via WebGL backend |
+| **Model Training** | Python (TensorFlow/Keras) | Train offline (126 features), convert to tfjs |
+| **Dataset** | Kaggle BISINDO Alphabets + Custom Dual-Hand Sign Dataset | A-Z static single-handed & two-handed signs |
+| **Animation** | Framer Motion 13+ | Smooth UI transitions & interactive micro-animations |
+| **Icons** | Lucide React | Clean, tree-shakable accessible SVG icons |
+| **Typography** | Geist Sans & Geist Mono (`next/font/google`) | Modern, highly legible, zero network layout shift |
+| **Testing** | Vitest + React Testing Library | Fast unit & integration testing for logic & UI |
+| **Deploy** | Vercel | Global CDN, automated Git CI/CD |
+| **Version Control** | Git + GitHub | Clean commit history & portfolio-ready |
 
 ---
 
 ## 📋 Feature Breakdown (4 Phases)
 
 ### Phase 1: Foundation (Day 1-7) 🏗️
-- [x] Project setup (Next.js, Tailwind, shadcn/ui)
-- [ ] Landing page dengan hero section
-- [ ] Webcam component (minta izin kamera, stream video)
-- [ ] MediaPipe Hand Landmarker integration
-- [ ] Canvas overlay untuk menggambar landmarks di atas video
-- [ ] Basic navigation (Translate, Learn, Dictionary)
+- [x] Project setup (Next.js 16, Tailwind v4, shadcn/ui, Git repo)
+- [ ] Landing page dengan hero section & theme showcase
+- [ ] Webcam component (permission handler, video stream)
+- [ ] MediaPipe Hand Landmarker integration (Dual-hand detection, max 2 hands)
+- [ ] Canvas overlay untuk menggambar visual skeleton 2 tangan di atas webcam
+- [ ] Basic navigation & routing (Translate, Learn, Dictionary)
+- [ ] Testing framework setup (Vitest + sample unit test)
 
 ### Phase 2: Core ML (Day 8-16) 🧠
-- [ ] Download & preprocess BISINDO dataset (Python)
-- [ ] Extract hand landmarks dari dataset menggunakan MediaPipe (Python)
-- [ ] Train classifier model (Keras Dense layers)
-- [ ] Convert model ke TensorFlow.js format
-- [ ] Load model di browser + real-time prediction
-- [ ] Prediction smoothing (buffer-based, anti-flicker)
-- [ ] Confidence score display
+- [ ] Download & preprocess BISINDO dataset (Python) untuk huruf 1 tangan dan 2 tangan
+- [ ] Extract hand landmarks 2 tangan (Left 63 + Right 63 = 126 float) dengan zero-padding
+- [ ] Train classifier model (Keras Dense NN: Input 126 → 256 → 128 → 64 → 26)
+- [ ] Convert model ke TensorFlow.js format (`model.json` + shards)
+- [ ] Load model di browser + real-time dual-hand prediction
+- [ ] Prediction smoothing (buffer 7 frames, min consensus 4)
+- [ ] Confidence score display & visual feedback
 
 ### Phase 3: Learning & Dictionary (Day 17-23) 📚
-- [ ] Dictionary page — browse semua huruf BISINDO A-Z
-- [ ] Detail page per huruf (gambar referensi + deskripsi)
-- [ ] Learn mode — guided lesson per huruf
-- [ ] Practice mode — webcam challenge ("Tunjukkan huruf A!")
-- [ ] Quiz mode — random huruf, user harus menunjukkan isyarat
-- [ ] Progress tracking (localStorage)
+- [ ] Dictionary schema & data: 26 huruf BISINDO (spesifikasi single-handed & two-handed)
+- [ ] Dictionary page — grid view semua huruf A-Z dengan filter tipe tangan
+- [ ] Detail page per huruf (gambar referensi dual-hand + instruksi)
+- [ ] Learn mode — guided lesson per huruf dengan visual step-by-step
+- [ ] Practice mode — webcam challenge dengan verifikasi 2 tangan
+- [ ] Quiz mode — 10 random huruf dengan timer & evaluasi otomatis
+- [ ] Progress tracking (localStorage) & Internationalization setup (`MOD-I18N`)
 
 ### Phase 4: Polish & Deploy (Day 24-30) ✨
-- [ ] Responsive design (mobile + desktop)
-- [ ] Dark mode
-- [ ] Loading states & error handling
-- [ ] Accessibility (keyboard nav, screen reader support)
-- [ ] PWA setup (bisa di-install di HP)
-- [ ] SEO & meta tags
-- [ ] README.md + dokumentasi
-- [ ] Deploy ke Vercel
-- [ ] Record demo video / screenshots untuk portfolio
+- [ ] Responsive design (mobile + tablet + desktop layout)
+- [ ] Dark mode & theme toggle
+- [ ] Bilingual switcher (Bahasa Indonesia 🇮🇩 / English 🇬🇧)
+- [ ] Loading states, skeleton loaders, error handling & graceful degradation
+- [ ] Accessibility audit (WCAG AA, keyboard navigation, aria-live)
+- [ ] PWA setup (manifest, service worker offline caching)
+- [ ] SEO & meta tags (OpenGraph preview)
+- [ ] Deploy ke Vercel + production verification
+- [ ] Comprehensive README.md & demo showcase
 
 ---
 
@@ -133,13 +139,13 @@
 
 | Day | Tanggal | Durasi | Task | Deliverable |
 |-----|---------|--------|------|-------------|
-| **1** | 22 Sep | 1.5 jam | Setup project: `npx create-next-app`, install Tailwind + shadcn/ui, setup Git repo, push ke GitHub | Repo GitHub + project jalan di localhost |
-| **2** | 23 Sep | 1.5 jam | Buat layout utama: Header, Navigation (Translate/Learn/Dictionary), Footer. Setup routing dengan App Router | 3 halaman kosong yang bisa dinavigasi |
-| **3** | 24 Sep | 2 jam | Landing page / Hero section: judul, deskripsi, CTA button. Desain yang menarik dengan Tailwind | Landing page yang eye-catching |
-| **4** | 25 Sep | 2 jam | Webcam component: minta izin kamera, tampilkan video stream di `<video>` element. Handle error (kamera ditolak, tidak ada kamera) | Webcam bisa stream di halaman Translate |
-| **5** | 26 Sep | 2 jam | Integrate MediaPipe Hand Landmarker: load model, detect landmarks dari webcam frame, console.log koordinat | Bisa melihat 21 landmark tangan di console |
-| **6** | 27 Sep | 2 jam | Canvas overlay: gambar titik-titik landmark dan garis penghubung di atas video webcam. Styling canvas | Landmark tangan terlihat di layar real-time |
-| **7** | 28 Sep | 1.5 jam | Review & refactor kode minggu 1. Fix bugs. Commit & push. Tulis catatan progress | Codebase bersih, landmark detection bekerja |
+| **1** | 22 Sep | 1.5 jam | Setup project: `npx create-next-app` (Next.js 16, React 19, Tailwind v4, shadcn/ui), push ke GitHub | Repo GitHub + project jalan di localhost |
+| **2** | 23 Sep | 1.5 jam | Buat layout utama: Header, Navigation (Translate/Learn/Dictionary), Footer, utility `cn` (`clsx` + `tailwind-merge`) | 3 halaman navigasi fungsional |
+| **3** | 24 Sep | 2 jam | Landing page / Hero section: visual banner, deskripsi visi BISINDO, CTA button | Landing page modern & responsif |
+| **4** | 25 Sep | 2 jam | Webcam component: minta izin kamera, tampilkan stream di `<video>`, penanganan status permission & error | Webcam view stabil di halaman Translate |
+| **5** | 26 Sep | 2 jam | Integrate MediaPipe Hand Landmarker: load model WASM, konfigurasi `max_num_hands: 2`, console.log koordinat 2 tangan | Deteksi 2 tangan (2×21 landmark) aktif |
+| **6** | 27 Sep | 2 jam | Canvas overlay: render skeleton 2 tangan dengan pembeda warna tangan kiri & kanan | Overlay visual skeleton real-time |
+| **7** | 28 Sep | 1.5 jam | Setup **Vitest** testing framework, tulis unit test pertama untuk helper normalisasi, review & refactor kode Minggu 1 | Vitest aktif + test passing + repo bersih |
 
 ---
 
@@ -147,13 +153,13 @@
 
 | Day | Tanggal | Durasi | Task | Deliverable |
 |-----|---------|--------|------|-------------|
-| **8** | 29 Sep | 2 jam | Setup Python environment. Download BISINDO dataset dari Kaggle. Explore data (cek jumlah gambar per kelas, kualitas) | Dataset terdownload + EDA notes |
-| **9** | 30 Sep | 2 jam | Script Python: extract hand landmarks dari semua gambar dataset menggunakan MediaPipe. Simpan sebagai CSV (label, x1,y1,z1, x2,y2,z2, ..., x21,y21,z21) | `landmarks.csv` file siap training |
-| **10** | 1 Okt | 2 jam | Normalize landmark data (relatif ke wrist). Split train/test (80/20). Augmentasi data jika perlu | Dataset siap training |
-| **11** | 2 Okt | 2 jam | Build & train Keras model: Input(63) → Dense(128, ReLU) → Dropout(0.3) → Dense(64, ReLU) → Dense(26, Softmax). Train hingga accuracy >85% | Model `.h5` tersimpan + accuracy report |
-| **12** | 3 Okt | 1.5 jam | Convert model ke TensorFlow.js format menggunakan `tensorflowjs_converter`. Test load di browser | `model.json` + weight files di `public/model/` |
-| **13** | 4 Okt | 2 jam | Integrate model ke Translate page: landmark data → model.predict() → tampilkan huruf hasil prediksi di UI. Implementasi prediction loop (`requestAnimationFrame`) | Real-time prediction huruf BISINDO! 🎉 |
-| **14** | 5 Okt | 2 jam | Prediction smoothing: buffer 5-10 frame terakhir, ambil huruf yang paling sering muncul. Tampilkan confidence score. Fix flickering | Prediksi stabil dan akurat |
+| **8** | 29 Sep | 2 jam | Setup Python environment. Download dataset BISINDO (Kaggle/custom). Analisis huruf 1 tangan vs 2 tangan | Dataset terstruktur + EDA report |
+| **9** | 30 Sep | 2 jam | Script Python: ekstrak landmark 2 tangan (Left: 63, Right: 63 = 126 float) dengan padding jika hanya 1 tangan | `landmarks_dualhand.csv` siap training |
+| **10** | 1 Okt | 2 jam | Normalisasi landmark relatif terhadap wrist masing-masing tangan. Split dataset 80/20 & data augmentation | Dataset 126-fitur siap training |
+| **11** | 2 Okt | 2 jam | Build & train Keras model: `Input(126) → Dense(256) → Dense(128) → Dense(64) → Dense(26)`. Target akurasi >85% | Model `.h5` tersimpan + accuracy report |
+| **12** | 3 Okt | 1.5 jam | Convert model ke format TensorFlow.js (`tensorflowjs_converter`). Test load di Next.js `public/model/` | `model.json` + weight shards di `public/model/` |
+| **13** | 4 Okt | 2 jam | Integrasi model ke halaman Translate: format input 126 fitur → `model.predict()` → render prediksi di UI | Real-time prediction huruf 1 & 2 tangan 🎉 |
+| **14** | 5 Okt | 2 jam | Prediction smoothing buffer (size 7, min consensus 4), confidence score meter, eliminasi flickering | Prediksi stabil, akurat & anti-flicker |
 
 ---
 
@@ -161,13 +167,13 @@
 
 | Day | Tanggal | Durasi | Task | Deliverable |
 |-----|---------|--------|------|-------------|
-| **15** | 6 Okt | 2 jam | Buat data structure untuk kamus BISINDO: JSON file dengan 26 huruf, masing-masing punya nama, deskripsi, gambar referensi, tipe (satu tangan / dua tangan) | `bisindo-dictionary.json` |
-| **16** | 7 Okt | 2 jam | Dictionary page: grid view semua huruf A-Z dengan gambar referensi. Klik huruf → modal/page detail | Dictionary page fungsional |
-| **17** | 8 Okt | 2 jam | Detail page per huruf: gambar referensi besar, instruksi posisi tangan, tips, dan tombol "Practice this sign" | 26 detail pages |
-| **18** | 9 Okt | 2 jam | Learn mode — guided lesson: step-by-step tutorial per huruf. User lihat referensi → coba di webcam → AI verifikasi apakah benar | Learn mode MVP |
-| **19** | 10 Okt | 2 jam | Practice mode: webcam challenge. App minta user menunjukkan huruf tertentu → deteksi → beri feedback (✅ Benar! / ❌ Coba lagi!) | Practice mode fungsional |
-| **20** | 11 Okt | 2 jam | Quiz mode: 10 random huruf, user harus menunjukkan isyarat yang benar. Timer per soal. Skor di akhir | Quiz mode selesai |
-| **21** | 12 Okt | 1.5 jam | Progress tracking: simpan di localStorage (huruf yang sudah dikuasai, skor quiz tertinggi, streak belajar). Tampilkan di dashboard mini | Progress system bekerja |
+| **15** | 6 Okt | 2 jam | Buat data kamus BISINDO: JSON 26 huruf (ID/EN name, deskripsi, tips, tipe: one-handed / two-handed, gambar) | `bisindo-dictionary.json` lengkap |
+| **16** | 7 Okt | 2 jam | Dictionary page: grid view kartu huruf A-Z, filter kategori (1 tangan / 2 tangan), visual badge | Halaman Kamus interaktif |
+| **17** | 8 Okt | 2 jam | Detail page per huruf: gambar referensi besar, instruksi posisi dual-hand, tombol "Latihan Huruf Ini" | 26 halaman detail huruf |
+| **18** | 9 Okt | 2 jam | Learn mode: guided lesson interaktif per huruf (melihat referensi → mencoba di webcam → verifikasi AI) | Guided Learn Mode MVP |
+| **19** | 10 Okt | 2 jam | Practice mode: webcam challenge mandiri dengan evaluasi real-time (✅ Benar / ❌ Coba lagi) | Practice Mode fungsional |
+| **20** | 11 Okt | 2 jam | Quiz mode: 10 soal acak, timer 15 detik/soal, penghitungan skor akhir (0-10) | Quiz Mode selesai |
+| **21** | 12 Okt | 1.5 jam | Progress tracking di `localStorage` (mastered letters, quiz high score, streak) + Setup i18n (`MOD-I18N` / `useLanguage`) | Progress tracker & fondasi bilingual siap |
 
 ---
 
@@ -175,15 +181,15 @@
 
 | Day | Tanggal | Durasi | Task | Deliverable |
 |-----|---------|--------|------|-------------|
-| **22** | 13 Okt | 2 jam | Responsive design: pastikan semua halaman tampil bagus di mobile. Adjust webcam layout untuk layar kecil | Mobile-friendly |
-| **23** | 14 Okt | 1.5 jam | Dark mode: implementasi theme toggle (light/dark). Pastikan semua komponen support | Dark mode toggle |
-| **24** | 15 Okt | 2 jam | Loading states: skeleton loaders saat model loading, spinner saat webcam initializing. Error boundaries & fallback UI | UX yang polished |
-| **25** | 16 Okt | 2 jam | Accessibility audit: keyboard navigation, proper ARIA labels, focus management, color contrast check | a11y compliant |
-| **26** | 17 Okt | 1.5 jam | PWA setup: manifest.json, service worker, offline-first caching strategy. Test install di HP | Installable PWA |
-| **27** | 18 Okt | 1.5 jam | SEO: meta tags, Open Graph, structured data. Favicon & social preview image | SEO-ready |
-| **28** | 19 Okt | 2 jam | Deploy ke Vercel. Test production build. Fix any prod-only issues. Custom domain (opsional) | Live di internet! 🌐 |
-| **29** | 20 Okt | 2 jam | README.md lengkap: screenshot, demo GIF, tech stack, setup instructions, features, architecture diagram. Persiapan portfolio | README portfolio-grade |
-| **30** | 21 Okt | 1.5 jam | Record demo video. Final touch. Social media post. Celebrasi! 🎉 | Project SELESAI! |
+| **22** | 13 Okt | 2 jam | Responsive design: adaptasi layout webcam untuk mobile & desktop, polish bilingual UI toggle (ID/EN) | Mobile-friendly & bilingual aktif |
+| **23** | 14 Okt | 1.5 jam | Dark mode: theme provider & toggle (light/dark) dengan CSS variables Tailwind v4 | Dark mode support menyeluruh |
+| **24** | 15 Okt | 2 jam | Polishing UX: skeleton loaders saat loading model, spinner webcam, error boundaries & fallback alert | UX halus & error handling kokoh |
+| **25** | 16 Okt | 2 jam | Accessibility (a11y) audit: navigasi keyboard, semantic tags, aria-live untuk hasil prediksi, kontras warna WCAG AA | a11y compliant |
+| **26** | 17 Okt | 1.5 jam | PWA configuration: `manifest.json`, Service Worker caching (offline-first untuk model & aset kamus) | App dapat di-install di HP (PWA) |
+| **27** | 18 Okt | 1.5 jam | SEO & metadata: OpenGraph card, Twitter card, favicon, structured data | SEO-ready |
+| **28** | 19 Okt | 2 jam | Deployment ke Vercel: build static export, verifikasi performa production, SSL HTTPS check | Isyara live di internet! 🌐 |
+| **29** | 20 Okt | 2 jam | Dokumentasi lengkap: README.md portfolio-grade, demo GIF, arsitektur dual-hand, setup guide | Dokumentasi GitHub profesional |
+| **30** | 21 Okt | 1.5 jam | Video demo showcase, verifikasi akhir semua fitur, project celebration! 🎉 | Project SELESAI & Siap Showcase! |
 
 ---
 
@@ -192,35 +198,36 @@
 ```
 isyara/
 ├── public/
-│   ├── model/                    # TensorFlow.js model files
+│   ├── model/                    # TensorFlow.js model files (126-feature input)
 │   │   ├── model.json
 │   │   └── group1-shard1of1.bin
 │   ├── images/
-│   │   └── bisindo/              # Reference images per huruf
+│   │   └── bisindo/              # Reference images per huruf (A-Z)
 │   │       ├── A.png
 │   │       ├── B.png
 │   │       └── ...
 │   ├── manifest.json             # PWA manifest
 │   └── favicon.ico
 ├── src/
-│   ├── app/                      # Next.js App Router
-│   │   ├── layout.tsx            # Root layout
+│   ├── app/                      # Next.js 16 App Router
+│   │   ├── layout.tsx            # Root layout (Geist font + theme provider)
 │   │   ├── page.tsx              # Landing page
+│   │   ├── globals.css           # Tailwind CSS v4 (@import "tailwindcss", @theme)
 │   │   ├── translate/
-│   │   │   └── page.tsx          # Real-time translation
+│   │   │   └── page.tsx          # Real-time dual-hand translation
 │   │   ├── learn/
 │   │   │   ├── page.tsx          # Learning hub
 │   │   │   └── [letter]/
-│   │   │       └── page.tsx      # Per-letter lesson
+│   │   │       └── page.tsx      # Per-letter lesson & practice
 │   │   └── dictionary/
-│   │       ├── page.tsx          # Browse all signs
+│   │       ├── page.tsx          # Browse all 26 signs
 │   │       └── [letter]/
 │   │           └── page.tsx      # Letter detail
 │   ├── components/
-│   │   ├── ui/                   # shadcn/ui components
+│   │   ├── ui/                   # shadcn/ui components (@base-ui/react)
 │   │   ├── webcam/
 │   │   │   ├── WebcamView.tsx    # Video stream component
-│   │   │   ├── CanvasOverlay.tsx # Landmark drawing
+│   │   │   ├── CanvasOverlay.tsx # Dual-hand landmark drawing
 │   │   │   └── PredictionDisplay.tsx
 │   │   ├── dictionary/
 │   │   │   ├── SignCard.tsx
@@ -234,30 +241,36 @@ isyara/
 │   │       ├── Footer.tsx
 │   │       └── Navigation.tsx
 │   ├── hooks/
-│   │   ├── useMediaPipe.ts       # MediaPipe lifecycle
+│   │   ├── useMediaPipe.ts       # MediaPipe dual-hand lifecycle
 │   │   ├── useWebcam.ts          # Webcam stream management
-│   │   ├── useModel.ts           # TF.js model loading
-│   │   └── usePrediction.ts      # Prediction + smoothing
+│   │   ├── useModel.ts           # TF.js 126-input model loading
+│   │   ├── usePrediction.ts      # Prediction + smoothing buffer
+│   │   ├── useProgress.ts        # localStorage progress management
+│   │   ├── useLanguage.ts        # i18n bilingual state & translation
+│   │   └── useTheme.ts           # Theme toggle hook
 │   ├── lib/
 │   │   ├── mediapipe/
-│   │   │   └── handLandmarker.ts # MediaPipe init & config
+│   │   │   └── handLandmarker.ts # MediaPipe init (max_num_hands: 2)
 │   │   ├── tensorflow/
-│   │   │   └── classifier.ts     # Model loading & prediction
+│   │   │   └── classifier.ts     # Model loading & dual-hand prediction
 │   │   ├── data/
-│   │   │   └── bisindo-dictionary.json
-│   │   └── utils.ts
-│   └── styles/
-│       └── globals.css
+│   │   │   ├── bisindo-dictionary.json
+│   │   │   └── translations.json # Bilingual strings (ID & EN)
+│   │   └── utils.ts              # cn helper (clsx + tailwind-merge)
 ├── training/                     # Python ML pipeline
-│   ├── collect_landmarks.py      # Extract landmarks from images
-│   ├── train_model.py            # Train Keras classifier
+│   ├── collect_landmarks.py      # Extract 126 landmarks (Left + Right hands)
+│   ├── train_model.py            # Train Keras classifier (Input: 126)
 │   ├── convert_to_tfjs.py        # Convert to TF.js format
 │   ├── requirements.txt
 │   └── data/
-│       └── landmarks.csv
+│       └── landmarks_dualhand.csv
+├── tests/                        # Vitest unit & integration tests
+│   ├── normalize.test.ts
+│   ├── smoothing.test.ts
+│   ├── quiz.test.ts
+│   └── streak.test.ts
 ├── .gitignore
-├── next.config.js
-├── tailwind.config.ts
+├── next.config.ts
 ├── tsconfig.json
 ├── package.json
 └── README.md
@@ -265,48 +278,63 @@ isyara/
 
 ---
 
-## 🎓 ML Pipeline Detail
+## 🎓 ML Pipeline Detail (Dual-Hand BISINDO)
 
-### Step 1: Dataset
-- **Source:** Kaggle "BISINDO Alphabets" dataset (gambar A-Z)
-- **Ukuran:** ~2600+ gambar (100+ per huruf)
-- **Preprocessing:** Resize, augmentasi (rotasi, brightness, flip)
+### Step 1: Dataset & Handedness Sorting
+- **Source:** Dataset Alfabet BISINDO (huruf satu tangan seperti 'I','L' dan huruf dua tangan seperti 'A','B','C','D').
+- **Format Koordinat:** 2 tangan × 21 landmark × 3 dimensi (x, y, z) = **126 fitur**.
+- **Mapping:**
+  - Index 0..62: Tangan Kiri (21 landmark × 3)
+  - Index 63..125: Tangan Kanan (21 landmark × 3)
+  - Jika hanya 1 tangan terdeteksi (misal tangan kanan saja), maka slot tangan kiri diisi padding 0.0.
 
-### Step 2: Landmark Extraction (Python)
+### Step 2: Landmark Extraction & Normalization (Python)
 ```python
-# Pseudocode
-for image in dataset:
+# Dual-hand extraction pseudocode
+def process_image(image):
     results = hand_landmarker.detect(image)
+    left_hand = [0.0] * 63
+    right_hand = [0.0] * 63
+    
     if results.hand_landmarks:
-        landmarks = flatten(results.hand_landmarks[0])  # 21 x 3 = 63 values
-        normalize(landmarks, relative_to=wrist)
-        save_to_csv(label, landmarks)
+        for idx, landmarks in enumerate(results.hand_landmarks):
+            handedness = results.handedness[idx][0].category_name # 'Left' / 'Right'
+            normalized = normalize_single_hand(landmarks) # 63 floats
+            if handedness == 'Left':
+                left_hand = normalized
+            elif handedness == 'Right':
+                right_hand = normalized
+                
+    features = left_hand + right_hand # Total 126 floats
+    return features
 ```
 
 ### Step 3: Model Architecture
 ```
-Input (63 features: 21 landmarks × 3 coords)
+Input (126 features: 2 hands × 21 landmarks × 3 coords)
     ↓
-Dense(128, ReLU) + BatchNorm + Dropout(0.3)
+Dense(256, ReLU) + BatchNormalization + Dropout(0.3)
     ↓
-Dense(64, ReLU) + Dropout(0.2)
+Dense(128, ReLU) + Dropout(0.2)
     ↓
-Dense(26, Softmax)  ← 26 huruf A-Z
+Dense(64, ReLU)
+    ↓
+Dense(26, Softmax)  ← 26 huruf BISINDO A-Z
 ```
-- **Expected accuracy:** 85-95% pada test set
-- **Model size:** < 1 MB (sangat ringan untuk browser)
+- **Expected accuracy:** 88–95% pada test set
+- **Model size:** ~480 KB (sangat ringan untuk browser)
 
 ### Step 4: Browser Inference
 ```
 Webcam frame (30fps)
     ↓ setiap frame
-MediaPipe Hand Landmarker (browser)
-    ↓ 21 landmarks [x,y,z]
-Normalize (relative to wrist)
-    ↓ 63 floats
+MediaPipe Hand Landmarker (browser, max_num_hands: 2)
+    ↓ up to 2 hand landmarks
+Dual-Hand Normalizer (wrist relative per hand + zero-padding)
+    ↓ 126 floats
 TF.js model.predict()
     ↓
-Smoothing buffer (5-10 frames)
+Smoothing buffer (7 frames, min consensus 4)
     ↓
 Display result: "A" (confidence: 94%)
 ```
@@ -317,12 +345,12 @@ Display result: "A" (confidence: 94%)
 
 | Risk | Mitigasi |
 |------|----------|
-| **Dataset BISINDO kurang bervariasi** | Augmentasi data + collect beberapa gambar sendiri via webcam |
-| **Akurasi model rendah (<80%)** | Tambah hidden layers, tambah data, fine-tune hyperparams |
-| **MediaPipe lambat di HP lama** | Resize video input ke 320x240, kurangi FPS ke 15 |
-| **Beberapa huruf mirip (sulit dibedakan)** | Fokus pada huruf yang jelas dulu, tandai huruf yang "tricky" |
-| **Waktu kurang** | Phase 4 bisa disederhanakan (skip PWA/dark mode) |
-| **BISINDO ada variasi regional** | Gunakan variasi Jakarta/standar sebagai baseline |
+| **Variasi tangan kiri vs kanan pada isyarat 1 tangan** | Normalisasi mendeteksi handedness; lakukan augmentasi data swap tangan saat training |
+| **Akurasi huruf 2 tangan vs 1 tangan berbeda** | Beri bobot loss seimbang pada dataset per kelas huruf BISINDO |
+| **MediaPipe lag saat mendeteksi 2 tangan di HP lama** | Optimasi input video 320×240, turunkan target FPS ke 15 via `AdaptiveQuality` |
+| **Beberapa huruf BISINDO mirip secara visual** | Tampilkan top-3 prediksi pada mode latihan untuk membantu user mengoreksi posisi jari |
+| **Keterbatasan waktu 30 hari** | Prioritas MoSCoW ketat; struktur modular memudahkan eksekusi bertahap |
+| **BISINDO ada variasi regional** | Gunakan variasi standar/Jakarta sebagai baseline kamus v1.0 |
 
 ---
 
@@ -332,8 +360,9 @@ Display result: "A" (confidence: 94%)
 1. [MediaPipe Hand Landmarker Guide](https://developers.google.com/mediapipe/solutions/vision/hand_landmarker)
 2. [MediaPipe Web Samples (GitHub)](https://github.com/google-ai-edge/mediapipe-samples-web)
 3. [TensorFlow.js Guide](https://www.tensorflow.org/js/guide)
-4. [Next.js 14 Docs](https://nextjs.org/docs)
+4. [Next.js Docs](https://nextjs.org/docs)
 5. [shadcn/ui Components](https://ui.shadcn.com)
+6. [Vitest Guide](https://vitest.dev/guide/)
 
 ### Dataset
 1. [Kaggle: BISINDO Alphabets](https://www.kaggle.com/datasets/achmadnoer/alfabet-bisindo)
