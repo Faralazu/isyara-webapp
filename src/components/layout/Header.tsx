@@ -6,7 +6,7 @@ import { Navigation } from "./Navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Menu, X, Globe } from "lucide-react";
-import { GithubIcon } from "@/components/ui/icons";
+import { GithubIcon, IsyaraLogo } from "@/components/ui/icons";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,23 +17,21 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/85 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/90 backdrop-blur-md transition-colors">
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Brand Logo */}
         <Link
           href="/"
-          className="group flex items-center gap-2.5 font-bold text-xl tracking-tight transition-opacity hover:opacity-90 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg py-1 px-1.5"
+          className="group flex items-center gap-3 font-semibold text-lg tracking-tight transition-opacity hover:opacity-90 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg py-1 px-1.5"
           aria-label="Isyara - Beranda"
         >
-          <span className="text-2xl transition-transform duration-200 group-hover:scale-110 select-none">
-            🤟
-          </span>
+          <IsyaraLogo className="size-8 transition-transform duration-200 group-hover:scale-105 shadow-xs" />
           <div className="flex flex-col">
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-300 dark:to-violet-400 font-extrabold text-xl leading-none">
+            <span className="font-extrabold text-lg text-foreground tracking-tight leading-none">
               Isyara
             </span>
-            <span className="text-[10px] font-medium text-muted-foreground tracking-wider uppercase">
-              AI BISINDO
+            <span className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase mt-0.5">
+              BISINDO AI
             </span>
           </div>
         </Link>

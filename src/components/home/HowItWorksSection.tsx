@@ -42,53 +42,50 @@ export function HowItWorksSection() {
   const steps = HOW_IT_WORKS_STEPS;
 
   return (
-    <section className="py-20 border-t border-border/50">
+    <section className="py-20 border-t border-border/70 bg-secondary/30 transition-colors">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-3">
-            <Cpu className="size-3.5" />
-            <span>Arsitektur & Alur Kerja</span>
+        <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/70 px-3.5 py-1 text-xs font-medium text-muted-foreground">
+            <Cpu className="size-3.5 text-primary" />
+            <span>Alur Kerja & Teknologi</span>
           </div>
 
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
-            Bagaimana Cara Kerja{" "}
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-300 dark:to-violet-400">
-              Isyara?
-            </span>
+            Bagaimana Cara Kerja Isyara?
           </h2>
 
-          <p className="mt-4 text-base text-muted-foreground">
-            Tiga langkah komputasi cerdas yang terjadi sepenuhnya di browser Anda dalam hitungan milidetik.
+          <p className="mt-3 text-base text-muted-foreground">
+            Tiga tahapan komputasi cerdas yang terjadi sepenuhnya di browser Anda tanpa ketergantungan server.
           </p>
         </div>
 
         {/* Steps Grid */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3 relative">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {steps.map((item, idx) => {
             const Icon = item.icon;
             return (
               <div
                 key={idx}
-                className="group relative rounded-2xl border border-border/80 bg-card p-6 shadow-xs flex flex-col justify-between transition-all hover:border-primary/50 hover:shadow-md"
+                className="group relative rounded-xl border border-border bg-card p-6 shadow-xs flex flex-col justify-between transition-colors hover:border-primary/50"
               >
                 <div>
-                  {/* Step Number Badge */}
+                  {/* Step Number & Tech Tag */}
                   <div className="flex items-center justify-between mb-4">
-                    <span className="font-mono text-3xl font-black text-muted-foreground/30 group-hover:text-primary/40 transition-colors">
+                    <span className="font-mono text-2xl font-black text-muted-foreground/40 group-hover:text-primary transition-colors">
                       {item.step}
                     </span>
-                    <span className="rounded-full bg-muted/60 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                    <span className="rounded-md bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                       {item.badge}
                     </span>
                   </div>
 
                   {/* Icon Box */}
-                  <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                    <Icon className="size-6" />
+                  <div className="mb-4 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Icon className="size-5" />
                   </div>
 
-                  <h3 className="font-bold text-lg text-foreground mb-2">
+                  <h3 className="font-bold text-base text-foreground mb-2">
                     {item.title}
                   </h3>
 

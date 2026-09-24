@@ -11,3 +11,52 @@ export function GithubIcon({ className = "size-4" }: { className?: string }) {
     </svg>
   );
 }
+
+/**
+ * Isyara custom brand mark:
+ * Two communicating gesture hands meeting in harmony, forming an organic bridge of speech.
+ */
+export function IsyaraLogo({
+  className = "size-7",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect width="32" height="32" rx="9" className="fill-primary" />
+      {/* Left gesture hand curve */}
+      <path
+        d="M10 21V13.5C10 12.12 11.12 11 12.5 11C13.88 11 15 12.12 15 13.5V17"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Middle finger peak */}
+      <path
+        d="M15 13.5V9.5C15 8.12 16.12 7 17.5 7C18.88 7 20 8.12 20 9.5V17"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Right connecting bridge / palm curl */}
+      <path
+        d="M20 12C20 10.9 20.9 10 22 10C23.1 10 24 10.9 24 12V18C24 21.31 21.31 24 18 24H15C12.24 24 10 21.76 10 19"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Gesture pulse point - subtle warmth */}
+      <circle cx="21.5" cy="18.5" r="1.5" fill="#93C5FD" />
+    </svg>
+  );
+}
+

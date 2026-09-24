@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Eye, Zap, ShieldCheck } from "lucide-react";
+import { Eye, Zap, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SampleSign {
@@ -52,27 +52,23 @@ export function VisualBanner() {
   const [activeSign, setActiveSign] = useState<SampleSign>(SAMPLE_SIGNS[0]);
 
   return (
-    <div className="relative mx-auto w-full max-w-4xl rounded-2xl border border-border/80 bg-gradient-to-b from-card to-card/60 p-4 sm:p-6 shadow-xl backdrop-blur-sm overflow-hidden">
-      {/* Background Glow Accents */}
-      <div className="absolute -top-24 -left-24 size-72 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 size-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-
+    <div className="relative mx-auto w-full max-w-4xl rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm overflow-hidden text-left transition-colors">
       {/* Top Banner Control Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-4">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-            <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-            <span>AI Tracker Live Mockup</span>
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+            <span className="size-2 rounded-full bg-emerald-500" />
+            <span>Simulasi Landmark MediaPipe</span>
           </div>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            MediaPipe Hand Landmarker 21-Points
+            21 Sendi Jari per Tangan
           </span>
         </div>
 
         {/* Quick Sample Selector */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground mr-1 hidden md:inline">
-            Pilih Sampel:
+          <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">
+            Contoh Huruf:
           </span>
           {SAMPLE_SIGNS.map((sign) => {
             const isSelected = activeSign.letter === sign.letter;
@@ -82,10 +78,10 @@ export function VisualBanner() {
                 type="button"
                 onClick={() => setActiveSign(sign)}
                 className={cn(
-                  "rounded-lg px-2.5 py-1 text-xs font-bold transition-all",
+                  "rounded-lg px-3 py-1 text-xs font-semibold transition-all",
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-xs scale-105"
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 )}
                 aria-pressed={isSelected}
               >
@@ -97,27 +93,17 @@ export function VisualBanner() {
       </div>
 
       {/* Main Simulation Viewport */}
-      <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-12 items-center">
+      <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-12 items-center">
         {/* Left Side: Hand Skeleton Interactive Visual Canvas (SVG) */}
-        <div className="relative md:col-span-7 aspect-[4/3] rounded-xl border border-border/60 bg-zinc-950 p-4 flex flex-col justify-between overflow-hidden shadow-inner">
-          {/* Subtle Grid Pattern Overlay */}
-          <div
-            className="absolute inset-0 opacity-15 pointer-events-none"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px)",
-              backgroundSize: "20px 20px",
-            }}
-          />
-
+        <div className="relative md:col-span-7 aspect-[4/3] rounded-xl border border-border/70 bg-stone-950 p-4 flex flex-col justify-between overflow-hidden shadow-inner">
           {/* Top Camera Overlay Info */}
-          <div className="relative z-10 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+          <div className="relative z-10 flex items-center justify-between text-[11px] text-stone-400 font-mono">
             <div className="flex items-center gap-2">
-              <span className="text-red-400 animate-pulse font-bold">● REC</span>
+              <span className="text-rose-400 animate-pulse font-bold">● REC</span>
               <span>640×480 • 30 FPS</span>
             </div>
-            <div className="rounded bg-zinc-900/80 px-2 py-0.5 border border-zinc-800 text-zinc-300">
-              {activeSign.type === "two-handed" ? "2 TANGAN (126 Coords)" : "1 TANGAN (63 Coords)"}
+            <div className="rounded bg-stone-900 px-2 py-0.5 border border-stone-800 text-stone-300">
+              {activeSign.type === "two-handed" ? "2 Tangan (126 Coords)" : "1 Tangan (63 Coords)"}
             </div>
           </div>
 
@@ -260,26 +246,21 @@ export function VisualBanner() {
 
         {/* Right Side: AI Inference Readout Card */}
         <div className="md:col-span-5 flex flex-col justify-between space-y-4">
-          <div className="rounded-xl border border-border/80 bg-card p-5 shadow-xs">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Prediksi AI
               </span>
               <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
-                  activeSign.type === "two-handed"
-                    ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                    : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                )}
+                className="rounded-md bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
               >
                 {activeSign.type === "two-handed" ? "2 Tangan" : "1 Tangan"}
               </span>
             </div>
 
-            {/* Huge Letter Display with Glow */}
+            {/* Letter Display (Solid Typography) */}
             <div className="my-4 flex items-baseline justify-center gap-3">
-              <span className="text-7xl font-black tracking-tight text-foreground bg-gradient-to-br from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-300">
+              <span className="text-7xl font-black tracking-tight text-foreground">
                 {activeSign.letter}
               </span>
               <span className="text-sm font-semibold text-muted-foreground">
@@ -295,34 +276,34 @@ export function VisualBanner() {
                   {activeSign.confidence}%
                 </span>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 rounded-full"
+                  className="h-full bg-primary transition-all duration-300 rounded-full"
                   style={{ width: `${activeSign.confidence}%` }}
                 />
               </div>
             </div>
 
             {/* Description */}
-            <p className="mt-4 text-xs text-muted-foreground leading-relaxed border-t border-border/40 pt-3">
+            <p className="mt-4 text-xs text-muted-foreground leading-relaxed border-t border-border/60 pt-3">
               {activeSign.description}
             </p>
           </div>
 
           {/* Quick Metrics Badges */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border/60 bg-muted/20 p-2.5 flex items-center gap-2">
-              <Zap className="size-4 text-amber-500 shrink-0" />
+            <div className="rounded-xl border border-border/80 bg-secondary/50 p-3 flex items-center gap-2.5">
+              <Zap className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <div>
                 <div className="text-[10px] text-muted-foreground">Latensi Inference</div>
                 <div className="text-xs font-bold text-foreground font-mono">
-                  {activeSign.latencyMs} ms (WebGL)
+                  {activeSign.latencyMs} ms
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-border/60 bg-muted/20 p-2.5 flex items-center gap-2">
-              <ShieldCheck className="size-4 text-emerald-500 shrink-0" />
+            <div className="rounded-xl border border-border/80 bg-secondary/50 p-3 flex items-center gap-2.5">
+              <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
                 <div className="text-[10px] text-muted-foreground">Privasi Kamera</div>
                 <div className="text-xs font-bold text-foreground">

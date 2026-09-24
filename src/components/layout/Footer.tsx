@@ -1,27 +1,27 @@
 import Link from "next/link";
-import { Heart, ShieldCheck, Sparkles } from "lucide-react";
-import { GithubIcon } from "@/components/ui/icons";
+import { Heart, ShieldCheck } from "lucide-react";
+import { GithubIcon, IsyaraLogo } from "@/components/ui/icons";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border/40 bg-muted/20 text-muted-foreground text-sm">
+    <footer className="border-t border-border/60 bg-secondary/40 text-muted-foreground text-sm transition-colors">
       <div className="container mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-3">
-            <div className="flex items-center gap-2 font-bold text-lg text-foreground">
-              <span className="text-xl">🤟</span>
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-300 dark:to-violet-400">
+            <div className="flex items-center gap-2.5 font-bold text-lg text-foreground">
+              <IsyaraLogo className="size-6 shadow-xs" />
+              <span className="font-extrabold text-foreground tracking-tight">
                 Isyara
               </span>
             </div>
             <p className="max-w-md text-xs leading-relaxed text-muted-foreground">
               Penerjemah Bahasa Isyarat Indonesia (BISINDO) real-time berbasis
               kecerdasan buatan on-device. Menjembatani komunikasi alami antara
-              teman tuli dan teman dengar melalui teknologi yang privat, cepat,
+              teman Tuli dan teman dengar melalui teknologi yang privat, cepat,
               dan inklusif.
             </p>
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
               <ShieldCheck className="size-3.5" />
               <span>100% On-Device & Privacy First</span>
             </div>
@@ -81,10 +81,7 @@ export function Footer() {
                 <span className="text-muted-foreground/80">Lisensi MIT</span>
               </li>
               <li>
-                <span className="inline-flex items-center gap-1 text-muted-foreground/80">
-                  <Sparkles className="size-3 text-amber-500" />
-                  <span>MediaPipe & TF.js</span>
-                </span>
+                <span className="text-muted-foreground/80">MediaPipe & TF.js On-Device</span>
               </li>
             </ul>
           </div>

@@ -1,4 +1,4 @@
-import { Heart, Users, Shield, Zap, Sparkles, CheckCircle2, XCircle } from "lucide-react";
+import { Heart, CheckCircle2, XCircle } from "lucide-react";
 
 export interface VisiComparison {
   problem: string;
@@ -38,82 +38,79 @@ export function VisiSection() {
   const comparisons = VISI_COMPARISONS;
 
   return (
-    <section className="py-20 border-t border-border/50 bg-muted/10">
+    <section className="py-20 border-t border-border/70 bg-background transition-colors">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 mb-3">
-            <Heart className="size-3.5" />
-            <span>Visi Sosial & Inklusivitas</span>
+        <div className="text-center max-w-3xl mx-auto mb-14">
+          <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/70 px-3.5 py-1 text-xs font-medium text-muted-foreground">
+            <Heart className="size-3.5 text-primary" />
+            <span>Misi Sosial & Aksesibilitas</span>
           </div>
 
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
-            Mengapa Kami Membangun{" "}
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-indigo-300 dark:to-violet-400">
-              Isyara?
-            </span>
+            Mengapa Kami Membangun Isyara?
           </h2>
 
           <p className="mt-4 text-base text-muted-foreground leading-relaxed">
-            Di Indonesia, terdapat lebih dari <strong>2.7 juta saudara kita penyandang disabilitas pendengaran</strong> (BPS). Mereka berkomunikasi dengan <strong>BISINDO</strong> — bahasa yang indah dan alami. Namun, minimnya sarana pembelajaran interaktif membuat jurang komunikasi antarsesama masih lebar.
+            Di Indonesia, terdapat lebih dari <strong>2.7 juta saudara kita penyandang disabilitas pendengaran</strong> (BPS). Mereka berkomunikasi dengan <strong>BISINDO</strong>—bahasa yang ekspresif, kaya, dan alami. Isyara hadir menghadirkan sarana belajar dan penerjemahan interaktif yang bebas biaya, privat, dan mudah diakses siapa saja.
           </p>
         </div>
 
         {/* Impact Numbers Grid */}
-        <div className="mb-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-xl border border-border/70 bg-card p-5 text-center shadow-xs">
-            <div className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-400">
+        <div className="mb-14 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="rounded-xl border border-border bg-card p-5 text-center shadow-xs">
+            <div className="text-3xl sm:text-4xl font-black text-foreground">
               2.7 Juta
             </div>
-            <div className="mt-1 text-xs font-medium text-muted-foreground">
+            <div className="mt-1.5 text-xs text-muted-foreground">
               Komunitas Tuli di Indonesia
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/70 bg-card p-5 text-center shadow-xs">
-            <div className="text-3xl sm:text-4xl font-black text-indigo-600 dark:text-indigo-400">
+          <div className="rounded-xl border border-border bg-card p-5 text-center shadow-xs">
+            <div className="text-3xl sm:text-4xl font-black text-foreground">
               26 Alfabet
             </div>
-            <div className="mt-1 text-xs font-medium text-muted-foreground">
+            <div className="mt-1.5 text-xs text-muted-foreground">
               Isyarat BISINDO 1 & 2 Tangan
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/70 bg-card p-5 text-center shadow-xs">
-            <div className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">
+          <div className="rounded-xl border border-border bg-card p-5 text-center shadow-xs">
+            <div className="text-3xl sm:text-4xl font-black text-primary">
               100%
             </div>
-            <div className="mt-1 text-xs font-medium text-muted-foreground">
-              On-Device Client-Side AI
+            <div className="mt-1.5 text-xs text-muted-foreground">
+              On-Device AI Tanpa Server
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/70 bg-card p-5 text-center shadow-xs">
-            <div className="text-3xl sm:text-4xl font-black text-violet-600 dark:text-violet-400">
-              0 ms
+          <div className="rounded-xl border border-border bg-card p-5 text-center shadow-xs">
+            <div className="text-3xl sm:text-4xl font-black text-primary">
+              &lt; 50 ms
             </div>
-            <div className="mt-1 text-xs font-medium text-muted-foreground">
-              Server Network Lag
+            <div className="mt-1.5 text-xs text-muted-foreground">
+              Latensi Deteksi Real-Time
             </div>
           </div>
         </div>
 
         {/* Problem vs Isyara Solution Comparison */}
-        <div className="rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-xs">
-          <h3 className="text-xl font-bold text-foreground text-center mb-8">
+        <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-xs">
+          <h3 className="text-xl font-bold text-foreground text-center mb-6">
             Kesenjangan yang Kami Jembatani
           </h3>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {comparisons.map((item, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-border/60 bg-muted/15 p-5 flex flex-col justify-between"
+                className="rounded-xl border border-border/80 bg-secondary/40 p-5 flex flex-col justify-between"
               >
                 {/* Traditional Challenge */}
                 <div className="mb-4">
-                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider mb-1">
-                    <XCircle className="size-4 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-600 dark:text-stone-400 mb-1.5">
+                    <XCircle className="size-3.5 text-rose-500 shrink-0" />
                     <span>Tantangan Saat Ini</span>
                   </div>
                   <h4 className="font-semibold text-sm text-foreground">
@@ -125,9 +122,9 @@ export function VisiSection() {
                 </div>
 
                 {/* Isyara Solution */}
-                <div className="pt-3 border-t border-border/40">
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1">
-                    <CheckCircle2 className="size-4 shrink-0" />
+                <div className="pt-3 border-t border-border/60">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-1.5">
+                    <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>Pendekatan Isyara</span>
                   </div>
                   <h4 className="font-semibold text-sm text-foreground">
