@@ -77,35 +77,35 @@ export function WebcamView({
       )}
     >
       {/* Top Header Status Bar */}
-      <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-4 py-2.5 text-xs">
+      <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-4 py-2.5 text-xs transition-colors">
         <div className="flex items-center gap-2 font-medium" aria-live="polite">
           {status === "active" && (
             <>
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
                 Kamera Aktif (Live)
               </span>
             </>
           )}
           {status === "requesting" && (
             <>
-              <Loader2 className="size-3.5 animate-spin text-blue-500" />
-              <span className="text-blue-600 dark:text-blue-400">
+              <Loader2 className="size-3.5 animate-spin text-primary" />
+              <span className="text-primary font-medium">
                 Meminta Izin Kamera...
               </span>
             </>
           )}
           {status === "initializing" && (
             <>
-              <Loader2 className="size-3.5 animate-spin text-indigo-500" />
-              <span className="text-indigo-600 dark:text-indigo-400">
+              <Loader2 className="size-3.5 animate-spin text-primary" />
+              <span className="text-primary font-medium">
                 Menghubungkan Stream...
               </span>
             </>
           )}
           {status === "idle" && (
             <>
-              <span className="size-2 rounded-full bg-amber-500" />
+              <span className="size-2 rounded-full bg-stone-400" />
               <span className="text-muted-foreground">
                 Kamera Siap Diaktifkan
               </span>
@@ -113,7 +113,7 @@ export function WebcamView({
           )}
           {status === "stopped" && (
             <>
-              <span className="size-2 rounded-full bg-zinc-400" />
+              <span className="size-2 rounded-full bg-stone-400" />
               <span className="text-muted-foreground">Kamera Dinonaktifkan</span>
             </>
           )}
@@ -138,7 +138,7 @@ export function WebcamView({
                 onClick={() => setIsMirrored((prev) => !prev)}
                 title={isMirrored ? "Nonaktifkan Cermin" : "Aktifkan Cermin"}
                 aria-label="Toggle Mirror Mode"
-                className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
               >
                 <FlipHorizontal className="size-3.5 mr-1" />
                 <span className="text-[10px] uppercase font-bold">
@@ -153,7 +153,7 @@ export function WebcamView({
                 onClick={stopCamera}
                 title="Hentikan Kamera"
                 aria-label="Stop Camera"
-                className="h-6 px-2 text-xs"
+                className="h-6 px-2 text-xs font-semibold"
               >
                 <CameraOff className="size-3 mr-1" />
                 <span>Stop</span>
@@ -164,7 +164,7 @@ export function WebcamView({
       </div>
 
       {/* Viewport Area */}
-      <div className="relative aspect-video w-full bg-zinc-950 flex items-center justify-center overflow-hidden">
+      <div className="relative aspect-video w-full bg-stone-950 flex items-center justify-center overflow-hidden">
         {/* Actual Video Feed */}
         <video
           ref={videoRef}
@@ -179,7 +179,7 @@ export function WebcamView({
           )}
         />
 
-        {/* Children Slot (CanvasOverlay skeleton MediaPipe in Day 6) */}
+        {/* Children Slot (CanvasOverlay skeleton MediaPipe) */}
         {status === "active" && children && (
           <div className="absolute inset-0 pointer-events-none z-10">
             {children}
@@ -188,14 +188,14 @@ export function WebcamView({
 
         {/* State: IDLE */}
         {status === "idle" && (
-          <div className="flex flex-col items-center justify-center p-6 text-center z-10 text-zinc-400">
-            <div className="size-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 mb-4 shadow-inner">
+          <div className="flex flex-col items-center justify-center p-6 text-center z-10 text-stone-400">
+            <div className="size-16 rounded-full bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-300 mb-4 shadow-inner">
               <Camera className="size-8" />
             </div>
-            <h3 className="text-base font-semibold text-zinc-200">
+            <h3 className="text-base font-semibold text-stone-200">
               Kamera Belum Dimulai
             </h3>
-            <p className="text-xs text-zinc-400 mt-1 max-w-sm">
+            <p className="text-xs text-stone-400 mt-1 max-w-sm leading-relaxed">
               Klik tombol di bawah untuk mengizinkan akses webcam. Seluruh video diproses 100% di browser Anda (privat & aman).
             </p>
 
@@ -203,14 +203,14 @@ export function WebcamView({
               <Button
                 type="button"
                 onClick={startCamera}
-                className="font-semibold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all hover:scale-102"
+                className="font-semibold gap-2 shadow-xs transition-transform hover:scale-[1.02]"
               >
                 <Camera className="size-4" />
                 <span>Mulai Kamera</span>
               </Button>
             </div>
 
-            <div className="mt-4 flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <div className="mt-4 flex items-center gap-1.5 text-[11px] text-stone-500">
               <ShieldCheck className="size-3.5 text-emerald-500" />
               <span>Privasi Terjamin: Video tidak pernah diunggah ke server</span>
             </div>

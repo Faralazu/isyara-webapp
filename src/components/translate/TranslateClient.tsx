@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Camera,
   Hand,
-  Sparkles,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
@@ -78,7 +77,9 @@ export function TranslateClient() {
     if (cameraStatus === "active" && isMpLoaded) {
       animFrameIdRef.current = requestAnimationFrame(runDetection);
     } else {
-      setHandResult(null);
+      queueMicrotask(() => {
+        if (isActive) setHandResult(null);
+      });
     }
 
     return () => {
@@ -100,10 +101,10 @@ export function TranslateClient() {
       {/* Right: MediaPipe & Hand Tracking Inspector Panel */}
       <div className="flex flex-col gap-6">
         {/* MediaPipe AI Engine Status Card */}
-        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-xs">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-xs transition-colors">
           <div className="flex items-center justify-between mb-3 text-xs">
             <span className="font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <Cpu className="size-3.5 text-blue-500" />
+              <Cpu className="size-3.5 text-primary" />
               <span>MediaPipe Tasks Vision</span>
             </span>
             <span className="text-[11px] font-mono text-muted-foreground">
@@ -112,7 +113,7 @@ export function TranslateClient() {
           </div>
 
           {isMpLoaded && (
-            <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2.5">
+            <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 font-medium bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-2.5">
               <CheckCircle2 className="size-4 shrink-0" />
               <div>
                 <span className="font-semibold">Model AI Aktif</span>
@@ -124,19 +125,19 @@ export function TranslateClient() {
           )}
 
           {isMpLoading && (
-            <div className="space-y-2 bg-muted/30 border border-border/60 rounded-lg p-3">
+            <div className="space-y-2 bg-secondary/60 border border-border rounded-lg p-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="flex items-center gap-1.5 text-foreground font-medium">
-                  <Loader2 className="size-3.5 animate-spin text-blue-500" />
+                  <Loader2 className="size-3.5 animate-spin text-primary" />
                   <span>Memuat Model MediaPipe...</span>
                 </span>
                 <span className="font-mono text-muted-foreground">
                   {loadingProgress}%
                 </span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                 <div
-                  className="h-full bg-blue-500 transition-all duration-300"
+                  className="h-full bg-primary transition-all duration-300"
                   style={{ width: `${loadingProgress}%` }}
                 />
               </div>
@@ -162,9 +163,9 @@ export function TranslateClient() {
         </div>
 
         {/* Live Hand Tracking Status Panel */}
-        <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-xs flex flex-col items-center justify-center text-center">
+        <div className="rounded-xl border border-border bg-card p-6 shadow-xs flex flex-col items-center justify-center text-center transition-colors">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <Layers className="size-3.5 text-indigo-500" />
+            <Layers className="size-3.5 text-primary" />
             <span>Deteksi Tangan Real-Time</span>
           </span>
 
@@ -172,17 +173,17 @@ export function TranslateClient() {
           <div className="my-5 flex flex-col items-center">
             {cameraStatus !== "active" ? (
               <div className="flex flex-col items-center text-muted-foreground">
-                <div className="size-16 rounded-full bg-muted/40 border border-border/60 flex items-center justify-center mb-2">
-                  <Camera className="size-6 text-muted-foreground/60" />
+                <div className="size-16 rounded-full bg-secondary border border-border flex items-center justify-center mb-2">
+                  <Camera className="size-6 text-muted-foreground" />
                 </div>
                 <span className="text-xs font-medium">
                   Nyalakan kamera untuk mulai deteksi
                 </span>
               </div>
             ) : numHands === 0 ? (
-              <div className="flex flex-col items-center text-amber-600 dark:text-amber-400">
+              <div className="flex flex-col items-center text-amber-700 dark:text-amber-400">
                 <div className="size-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-2 animate-pulse">
-                  <Hand className="size-7" />
+                  <Hand className="size-7 text-amber-600 dark:text-amber-400" />
                 </div>
                 <span className="text-xs font-semibold">
                   Tunjukkan Tangan ke Kamera
@@ -192,19 +193,19 @@ export function TranslateClient() {
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col items-center text-emerald-600 dark:text-emerald-400">
+              <div className="flex flex-col items-center text-emerald-700 dark:text-emerald-400">
                 <div className="size-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-2 shadow-inner">
-                  <Hand className="size-7" />
+                  <Hand className="size-7 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <span className="text-sm font-bold">
+                <span className="text-sm font-bold text-foreground">
                   {numHands === 2
                     ? "2 Tangan Terdeteksi (Dual-Hand)"
                     : "1 Tangan Terdeteksi (Single-Hand)"}
                 </span>
-                <span className="text-xs font-medium text-foreground mt-0.5">
+                <span className="text-xs font-medium text-muted-foreground mt-0.5">
                   Sisi: {handednessList.join(" & ")}
                 </span>
-                <span className="text-[11px] text-muted-foreground font-mono mt-1 bg-muted px-2 py-0.5 rounded-md">
+                <span className="text-[11px] text-muted-foreground font-mono mt-1 bg-secondary px-2 py-0.5 rounded-md border border-border">
                   {numHands * 21} Titik Koordinat 3D Terlacak
                 </span>
               </div>
@@ -213,14 +214,14 @@ export function TranslateClient() {
 
           {/* Live Coordinate Preview when hands detected */}
           {handResult && handResult.landmarks && (
-            <div className="w-full bg-zinc-950 text-zinc-300 p-3 rounded-xl border border-zinc-800 text-[11px] text-left font-mono space-y-1 overflow-x-auto">
-              <div className="text-zinc-500 text-[10px] uppercase font-bold border-b border-zinc-800 pb-1 flex justify-between">
+            <div className="w-full bg-stone-950 text-stone-300 p-3 rounded-xl border border-stone-800 text-[11px] text-left font-mono space-y-1 overflow-x-auto">
+              <div className="text-stone-500 text-[10px] uppercase font-bold border-b border-stone-800 pb-1 flex justify-between">
                 <span>Contoh Koordinat Wrist (Titik 0)</span>
                 <span>x, y, z</span>
               </div>
               {handResult.landmarks.map((hand, idx) => (
                 <div key={idx} className="flex justify-between pt-0.5">
-                  <span className="text-blue-400">
+                  <span className="text-sky-400">
                     Hand {idx + 1} ({handResult.handedness?.[idx] || "N/A"}):
                   </span>
                   <span>
@@ -232,8 +233,8 @@ export function TranslateClient() {
             </div>
           )}
 
-          <div className="mt-4 pt-4 border-t border-border/40 w-full flex items-center justify-between text-xs text-muted-foreground">
-            <span>Mode Running</span>
+          <div className="mt-4 pt-4 border-t border-border w-full flex items-center justify-between text-xs text-muted-foreground">
+            <span>Mode Aliran</span>
             <span className="font-mono text-foreground font-semibold">
               Video (Continuous)
             </span>
@@ -241,13 +242,13 @@ export function TranslateClient() {
         </div>
 
         {/* Dictionary Shortcut Card */}
-        <div className="rounded-2xl border border-border/60 bg-muted/20 p-5">
+        <div className="rounded-xl border border-border bg-secondary/50 p-5 transition-colors">
           <div className="flex items-center gap-2 font-semibold text-sm text-foreground mb-1">
-            <Hand className="size-4 text-indigo-500" />
+            <Hand className="size-4 text-primary" />
             <span>Belum hafal isyaratnya?</span>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">
-            Buka kamus isyarat BISINDO untuk melihat contoh gestur satu tangan dan dua tangan.
+          <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+            Buka katalog alfabet BISINDO untuk melihat contoh gestur satu tangan dan dua tangan.
           </p>
           <Link
             href="/dictionary"
@@ -256,7 +257,7 @@ export function TranslateClient() {
               "w-full justify-center gap-1.5 text-xs font-semibold"
             )}
           >
-            <span>Lihat Kamus Isyarat</span>
+            <span>Buka Kamus Isyarat</span>
             <ArrowRight className="size-3.5" />
           </Link>
         </div>
