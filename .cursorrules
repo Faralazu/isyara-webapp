@@ -1,0 +1,13 @@
+# Cursor Rules for Isyara WebApp
+
+Follow the project guidelines specified in `AGENTS.md` and check `PROJECT_STATUS.md`.
+
+## Key Commands (Windows PowerShell)
+- Always run scripts using `npm.cmd` rather than `npm`.
+- Run tests: `npm.cmd test`
+- Run dev: `npm.cmd run dev`
+- Build: `npm.cmd run build`
+
+## Key Constraints
+- Next.js 16 + React 19: All webcam and MediaPipe components must have `'use client';`
+- Always verify all 44 Vitest tests pass before considering a task complete.
