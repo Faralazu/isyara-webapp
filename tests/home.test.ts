@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { SAMPLE_SIGNS } from "@/components/home/VisualBanner";
 import { HOW_IT_WORKS_STEPS } from "@/components/home/HowItWorksSection";
 import { VISI_COMPARISONS } from "@/components/home/VisiSection";
+import { findSign } from "@/lib/dictionary/data";
 
 describe("Landing Page Components Data Integrity (Day 3)", () => {
   describe("VisualBanner SAMPLE_SIGNS", () => {
@@ -15,14 +16,25 @@ describe("Landing Page Components Data Integrity (Day 3)", () => {
       expect(types).toContain("two-handed");
     });
 
-    it("should have valid metrics for confidence and latency", () => {
+    it("should have valid metrics for confidence and inference time", () => {
       SAMPLE_SIGNS.forEach((sign) => {
         expect(sign.letter).toBeDefined();
         expect(sign.confidence).toBeGreaterThan(90);
         expect(sign.confidence).toBeLessThanOrEqual(100);
-        expect(sign.latencyMs).toBeGreaterThan(0);
-        expect(sign.latencyMs).toBeLessThan(100);
+        expect(sign.inferenceTimeMs).toBeGreaterThan(0);
+        expect(sign.inferenceTimeMs).toBeLessThan(100);
         expect(sign.description.length).toBeGreaterThan(10);
+      });
+    });
+
+    it("should source letter content from the shared BISINDO dataset", () => {
+      // The banner must never re-author descriptions that the Dictionary owns.
+      SAMPLE_SIGNS.forEach((sign) => {
+        const source = findSign(sign.letter);
+        expect(source).toBeDefined();
+        expect(sign.description).toBe(source?.descriptionId);
+        expect(sign.name).toBe(source?.nameId);
+        expect(sign.type).toBe(source?.type);
       });
     });
   });

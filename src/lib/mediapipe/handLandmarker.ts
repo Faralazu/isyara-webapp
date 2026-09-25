@@ -4,8 +4,8 @@
  */
 
 import type { HandLandmarker } from "@mediapipe/tasks-vision";
-import type { HandLandmark, MediaPipeResult } from "@/types/camera";
-import type { ErrorCode } from "@/types/events";
+import type { HandLandmark, Handedness, MediaPipeResult } from "@/types/camera";
+import type { MappedError } from "@/types/events";
 import { logger } from "@/lib/logger";
 
 /**
@@ -70,8 +70,8 @@ export function formatMediaPipeResult(
     }))
   );
 
-  const handedness: string[] = (rawResult.handedness || []).map(
-    (cats) => cats[0]?.categoryName || "Right"
+  const handedness: Handedness[] = (rawResult.handedness || []).map((cats) =>
+    cats[0]?.categoryName === "Left" ? "Left" : "Right"
   );
 
   return {
@@ -84,10 +84,7 @@ export function formatMediaPipeResult(
 /**
  * Map error during MediaPipe initialization or execution to standard ErrorCode
  */
-export function mapMediaPipeError(err: unknown): {
-  code: ErrorCode;
-  message: string;
-} {
+export function mapMediaPipeError(err: unknown): MappedError {
   const errMsg = err instanceof Error ? err.message : String(err);
 
   if (
@@ -224,7 +221,11 @@ export async function initializeHandLandmarker(
 }
 
 /**
- * Execute hand detection from HTMLVideoElement frame
+ * Execute hand detection from HTMLVideoElement frame.
+ *
+ * @param timestampMs Monotonic timestamp. MediaPipe VIDEO mode throws when a
+ * timestamp is not strictly greater than the previous one, so callers that
+ * already track frame time should pass it explicitly.
  */
 export function detectHandsFromVideo(
   landmarker: VideoHandLandmarker | null,

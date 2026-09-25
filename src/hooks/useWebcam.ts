@@ -5,7 +5,7 @@ import type {
   UseWebcamReturn,
   WebcamStatus,
 } from "@/types/camera";
-import type { ErrorCode } from "@/types/events";
+import type { ErrorCode, MappedError } from "@/types/events";
 import { DEFAULT_WEBCAM_CONSTRAINTS } from "@/types/camera";
 import { logger } from "@/lib/logger";
 
@@ -19,13 +19,14 @@ export interface UseWebcamOptions {
  * Helper to map browser MediaStream / DOMException errors to standard Isyara ErrorCodes
  * Grounded in SRD Section 4.3 Error Codes Catalog
  */
-export function mapCameraError(err: unknown): {
-  code: ErrorCode;
-  message: string;
-} {
+export function mapCameraError(err: unknown): MappedError {
   if (err instanceof Error || (typeof err === "object" && err !== null && "name" in err)) {
-    const errorName = (err as { name?: string }).name || "";
-    const originalMessage = (err as Error).message || "";
+    // Read through `unknown` fields: a rejected value may carry `name` without
+    // being a real Error instance, so `message` cannot be assumed to exist.
+    const candidate = err as { name?: unknown; message?: unknown };
+    const errorName = typeof candidate.name === "string" ? candidate.name : "";
+    const originalMessage =
+      typeof candidate.message === "string" ? candidate.message : "";
 
     switch (errorName) {
       case "NotAllowedError":
@@ -101,6 +102,26 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
   const streamRef = useRef<MediaStream | null>(null);
   const isMountedRef = useRef<boolean>(true);
 
+  /**
+   * Options live in refs so that inline callbacks or constraint object literals
+   * passed by a parent re-render do not change the identity of `startCamera`.
+   * Otherwise the mount effect below would re-run and its cleanup would tear
+   * down a perfectly healthy live stream.
+   *
+   * The refs are seeded with the initial values and re-synced in an effect, so
+   * they are never written during render.
+   */
+  const constraintsRef = useRef<MediaStreamConstraints>(constraints);
+  const onStreamReadyRef = useRef<UseWebcamOptions["onStreamReady"]>(onStreamReady);
+
+  useEffect(() => {
+    constraintsRef.current = constraints;
+  }, [constraints]);
+
+  useEffect(() => {
+    onStreamReadyRef.current = onStreamReady;
+  }, [onStreamReady]);
+
   const [status, setStatus] = useState<WebcamStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<ErrorCode | null>(null);
@@ -143,16 +164,20 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
   const startCamera = useCallback(async () => {
     if (typeof window === "undefined") return;
 
+    const activeConstraints = constraintsRef.current;
+
     // Check if mediaDevices API is supported
     if (!navigator?.mediaDevices?.getUserMedia) {
-      const mapped = {
-        code: "E-CAM-002" as ErrorCode,
+      const mapped: MappedError = {
+        code: "E-CAM-002",
         message:
           "Fitur kamera tidak didukung pada browser ini atau halaman belum menggunakan HTTPS yang aman.",
       };
-      setStatus("error");
-      setError(mapped.message);
-      setErrorCode(mapped.code);
+      if (isMountedRef.current) {
+        setStatus("error");
+        setError(mapped.message);
+        setErrorCode(mapped.code);
+      }
       logger.log({
         level: "ERROR",
         module: "MOD-CAM",
@@ -173,7 +198,7 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
     setErrorCode(null);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia(activeConstraints);
 
       if (!isMountedRef.current) {
         // Component unmounted while waiting for user prompt
@@ -184,6 +209,9 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
       streamRef.current = stream;
       setStatus("initializing");
 
+      const videoConstraints =
+        typeof activeConstraints.video === "object" ? activeConstraints.video : null;
+
       logger.log({
         level: "INFO",
         module: "MOD-CAM",
@@ -191,8 +219,8 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
         data: {
           tracksCount: stream.getVideoTracks().length,
           facingMode:
-            typeof constraints.video === "object"
-              ? (constraints.video as MediaTrackConstraints).facingMode
+            videoConstraints && "facingMode" in videoConstraints
+              ? videoConstraints.facingMode
               : undefined,
         },
       });
@@ -213,36 +241,31 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
         };
       });
 
-      // Attach stream to video element
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
+      // Attach stream to video element.
+      // The node is captured once: re-reading the ref inside the handler could
+      // observe a different element (or null) by the time metadata lands.
+      const videoElement = videoRef.current;
+      if (videoElement) {
+        videoElement.srcObject = stream;
+        videoElement.onloadedmetadata = () => {
           if (!isMountedRef.current) return;
-          videoRef.current
-            ?.play()
-            .then(() => {
-              if (isMountedRef.current) {
-                setStatus("active");
-                if (onStreamReady) {
-                  onStreamReady(stream);
-                }
-              }
-            })
+          const notifyReady = () => {
+            if (!isMountedRef.current) return;
+            setStatus("active");
+            onStreamReadyRef.current?.(stream);
+          };
+
+          videoElement
+            .play()
+            .then(notifyReady)
             .catch(() => {
               // Browser autoplay policy might need interaction, but video is muted
-              if (isMountedRef.current) {
-                setStatus("active");
-                if (onStreamReady) {
-                  onStreamReady(stream);
-                }
-              }
+              notifyReady();
             });
         };
       } else {
         setStatus("active");
-        if (onStreamReady) {
-          onStreamReady(stream);
-        }
+        onStreamReadyRef.current?.(stream);
       }
     } catch (err) {
       if (!isMountedRef.current) return;
@@ -263,22 +286,17 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
         },
       });
     }
-  }, [constraints, onStreamReady]);
+  }, []);
 
   // Handle autoStart option
+  /**
+   * Mount/unmount lifecycle.
+   *
+   * Runs once per mount: the cleanup must only fire on real unmount, never
+   * because a parent re-render produced a new `startCamera` identity.
+   */
   useEffect(() => {
     isMountedRef.current = true;
-
-    // Deferred to a microtask: `startCamera()` flips status synchronously, and
-    // applying state directly inside the effect body would cascade renders.
-    // (Same rationale as the queueMicrotask guard in TranslateClient.)
-    if (autoStart) {
-      queueMicrotask(() => {
-        if (isMountedRef.current) {
-          startCamera();
-        }
-      });
-    }
 
     // Capture the node this effect is responsible for; reading the ref inside
     // the cleanup could observe a different element by then.
@@ -300,6 +318,20 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
         videoElement.srcObject = null;
       }
     };
+  }, []);
+
+  // Handle autoStart option
+  useEffect(() => {
+    if (!autoStart) return;
+
+    // Deferred to a microtask: `startCamera()` flips status synchronously, and
+    // applying state directly inside the effect body would cascade renders.
+    // (Same rationale as the queueMicrotask guard in TranslateClient.)
+    queueMicrotask(() => {
+      if (isMountedRef.current) {
+        startCamera();
+      }
+    });
   }, [autoStart, startCamera]);
 
   return {

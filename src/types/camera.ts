@@ -35,7 +35,6 @@ export interface UseWebcamReturn {
   /** Constraints yang digunakan */
   constraints: MediaStreamConstraints;
 }
-
 export const DEFAULT_WEBCAM_CONSTRAINTS: MediaStreamConstraints = {
   video: {
     facingMode: "user", // Kamera depan
@@ -45,6 +44,9 @@ export const DEFAULT_WEBCAM_CONSTRAINTS: MediaStreamConstraints = {
   },
   audio: false,
 };
+
+/** MediaPipe handedness label. The model only ever emits these two values. */
+export type Handedness = "Left" | "Right";
 
 export interface HandLandmark {
   x: number; // Normalized [0, 1] relative to image width
@@ -56,8 +58,8 @@ export interface MediaPipeResult {
   /** 21 landmarks per hand, max 2 hands */
   landmarks: HandLandmark[][] | null;
 
-  /** Handedness: 'Left' | 'Right' */
-  handedness: string[] | null;
+  /** Handedness per detected hand, index-aligned with `landmarks` */
+  handedness: Handedness[] | null;
 
   /** Timestamp of detection */
   timestamp: number;
@@ -79,6 +81,15 @@ export interface UseMediaPipeReturn {
   /** Error code sesuai katalog SRD (E-MP-001, E-MP-002) */
   errorCode: ErrorCode | null;
 
-  /** Detect hands dari video frame. Returns null jika tidak ada tangan */
-  detect: (video: HTMLVideoElement) => MediaPipeResult | null;
+  /**
+   * Detect hands dari video frame. Returns null jika tidak ada tangan.
+   *
+   * @param timestampMs Monotonic timestamp in milliseconds. MediaPipe's VIDEO
+   * mode requires strictly increasing values; omit to let the loader use
+   * `performance.now()`.
+   */
+  detect: (video: HTMLVideoElement, timestampMs?: number) => MediaPipeResult | null;
+
+  /** Coba muat ulang model setelah kegagalan (SRD §6.3). */
+  retry: () => void;
 }

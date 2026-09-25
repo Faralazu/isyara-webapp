@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Heart, ShieldCheck } from "lucide-react";
 import { GithubIcon, IsyaraLogo } from "@/components/ui/icons";
+import { GITHUB_REPO_URL } from "@/lib/constants";
 
 export function Footer() {
   return (
@@ -29,9 +30,9 @@ export function Footer() {
 
           {/* Quick Links */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-xs tracking-wider uppercase text-foreground">
+            <h2 className="font-semibold text-xs tracking-wider uppercase text-foreground">
               Fitur Aplikasi
-            </h4>
+            </h2>
             <ul className="space-y-2 text-xs">
               <li>
                 <Link
@@ -62,13 +63,13 @@ export function Footer() {
 
           {/* Resources & Open Source */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-xs tracking-wider uppercase text-foreground">
+            <h2 className="font-semibold text-xs tracking-wider uppercase text-foreground">
               Sumber Daya
-            </h4>
+            </h2>
             <ul className="space-y-2 text-xs">
               <li>
                 <a
-                  href="https://github.com/Faralazu/isyara-webapp"
+                  href={GITHUB_REPO_URL}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
@@ -91,7 +92,7 @@ export function Footer() {
         <div className="mt-8 pt-6 border-t border-border/40 flex flex-col items-center justify-between gap-3 text-xs sm:flex-row text-muted-foreground/80">
           <div className="flex items-center gap-1.5">
             <span>Dibuat dengan</span>
-            <Heart className="size-3.5 text-rose-500 fill-rose-500 inline" />
+            <Heart aria-hidden="true" className="size-3.5 text-rose-500 fill-rose-500 inline" />
             <span>untuk Aksesibilitas Komunitas Tuli Indonesia</span>
           </div>
           <div>

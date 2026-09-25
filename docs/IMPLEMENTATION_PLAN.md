@@ -100,7 +100,7 @@
 - [x] MediaPipe Hand Landmarker integration (Dual-hand detection, max 2 hands)
 - [x] Canvas overlay untuk menggambar visual skeleton 2 tangan di atas webcam
 - [x] Basic navigation & routing (Translate, Learn, Dictionary)
-- [ ] Testing framework setup (Vitest + sample unit test)
+- [x] Testing framework setup (Vitest + sample unit test)
 
 ### Phase 2: Core ML (Day 8-16) 🧠
 - [ ] Download & preprocess BISINDO dataset (Python) untuk huruf 1 tangan dan 2 tangan
@@ -145,7 +145,7 @@
 | **4** | 25 Sep | 2 jam | Webcam component: minta izin kamera, tampilkan stream di `<video>`, penanganan status permission & error | Webcam view stabil di halaman Translate |
 | **5** | 26 Sep | 2 jam | Integrate MediaPipe Hand Landmarker: load model WASM, konfigurasi `max_num_hands: 2`, console.log koordinat 2 tangan | Deteksi 2 tangan (2×21 landmark) aktif |
 | **6** | 27 Sep | 2 jam | Canvas overlay: render skeleton 2 tangan dengan pembeda warna tangan kiri & kanan | ✅ Overlay visual skeleton real-time (`handSkeleton.ts` + `CanvasOverlay.tsx`) |
-| **7** | 28 Sep | 1.5 jam | Setup **Vitest** testing framework, tulis unit test pertama untuk helper normalisasi, review & refactor kode Minggu 1 | Vitest aktif + test passing + repo bersih |
+| **7** | 28 Sep | 1.5 jam | Setup **Vitest** testing framework, tulis unit test pertama untuk helper normalisasi, review & refactor kode Minggu 1 | ✅ Vitest aktif (unit + integration tier) + 150 test passing + coverage 97% + repo bersih |
 
 ---
 
@@ -249,10 +249,14 @@ isyara/
 │   │   ├── useLanguage.ts        # i18n bilingual state & translation
 │   │   └── useTheme.ts           # Theme toggle hook
 │   ├── lib/
+│   │   ├── constants.ts          # Shared app constants (repo URL, app name)
 │   │   ├── mediapipe/
 │   │   │   ├── handLandmarker.ts # MediaPipe init (max_num_hands: 2)
 │   │   │   └── handSkeleton.ts   # 21-landmark topology, colours, canvas renderer
+│   │   ├── dictionary/
+│   │   │   └── data.ts           # 26-letter BISINDO alphabet (single source)
 │   │   ├── tensorflow/
+│   │   │   ├── normalize.ts      # Dual-hand 126-feature normalizer (SRD §5.1)
 │   │   │   └── classifier.ts     # Model loading & dual-hand prediction
 │   │   ├── data/
 │   │   │   ├── bisindo-dictionary.json
@@ -266,6 +270,8 @@ isyara/
 │   └── data/
 │       └── landmarks_dualhand.csv
 ├── tests/                        # Vitest unit & integration tests
+│   ├── normalize.test.ts              # 126-feature layout, slots, invariance
+│   ├── dictionaryData.test.ts         # 26-letter dataset integrity
 │   ├── logger.test.ts
 │   ├── utils.test.ts
 │   ├── mediapipe.test.ts
@@ -273,7 +279,12 @@ isyara/
 │   ├── navigation.test.ts
 │   ├── home.test.ts
 │   ├── canvasOverlay.test.ts          # skeleton topology, colours, cover mapping
-│   └── canvasOverlayComponent.test.tsx # CanvasOverlay static markup
+│   ├── canvasOverlayComponent.test.tsx
+│   ├── handLandmarkerLifecycle.test.ts
+│   ├── handLandmarkerLoader.integration.test.tsx
+│   ├── useWebcam.integration.test.tsx
+│   └── useMediaPipe.integration.test.tsx
+├── vitest.config.mts             # unit + integration tiers, v8 coverage gate
 ├── .gitignore
 ├── next.config.ts
 ├── tsconfig.json
@@ -294,6 +305,12 @@ isyara/
   - Jika hanya 1 tangan terdeteksi (misal tangan kanan saja), maka slot tangan kiri diisi padding 0.0.
 
 ### Step 2: Landmark Extraction & Normalization (Python)
+
+> ⚠️ **Kontrak wajib**: implementasi Python **harus identik** dengan `src/lib/tensorflow/normalize.ts`.
+> Urutan slot (Kiri `0..62`, Kanan `63..125`), padding `0.0`, centering relatif wrist, dan
+> penskalaan per-tangan (`max Euclidean distance`) adalah hal yang sama yang dijalankan
+> browser saat inference. Perbedaan sekecil apa pun akan membuat akurasi model jatuh.
+
 ```python
 # Dual-hand extraction pseudocode
 def process_image(image):

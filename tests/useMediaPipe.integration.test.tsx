@@ -144,7 +144,48 @@ describe("useMediaPipe lifecycle (SRD §4.1 Contract 2)", () => {
 
     const video = {} as HTMLVideoElement;
     expect(result.current.detect(video)).toBe(detection);
-    expect(detectHandsFromVideo).toHaveBeenCalledWith(fakeLandmarker, video);
+    // `detect` forwards an optional timestamp; undefined means "use now".
+    expect(detectHandsFromVideo).toHaveBeenCalledWith(fakeLandmarker, video, undefined);
+  });
+
+  it("should forward an explicit timestamp to the detector", async () => {
+    initializeHandLandmarker.mockResolvedValue(fakeLandmarker);
+    detectHandsFromVideo.mockReturnValue(null);
+
+    const { result } = renderHook(() => useMediaPipe());
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    const video = {} as HTMLVideoElement;
+    result.current.detect(video, 12345);
+
+    expect(detectHandsFromVideo).toHaveBeenCalledWith(fakeLandmarker, video, 12345);
+  });
+
+  it("should expose a retry that clears the error and reloads the model", async () => {
+    initializeHandLandmarker
+      .mockRejectedValueOnce(new Error("first failure"))
+      .mockResolvedValueOnce(fakeLandmarker);
+
+    const { result } = renderHook(() => useMediaPipe());
+
+    await waitFor(() => {
+      expect(result.current.errorCode).toBe("E-MP-001");
+    });
+
+    act(() => {
+      result.current.retry();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.errorCode).toBeNull();
+    expect(result.current.loadingProgress).toBe(100);
   });
 
   it("should ignore a late loader resolution after unmount", async () => {

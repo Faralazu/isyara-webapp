@@ -1,7 +1,6 @@
 export function GithubIcon({ className = "size-4" }: { className?: string }) {
   return (
     <svg
-      role="img"
       viewBox="0 0 24 24"
       fill="currentColor"
       className={className}

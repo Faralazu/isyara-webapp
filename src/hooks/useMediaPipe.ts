@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { HandLandmarker } from "@mediapipe/tasks-vision";
 import type { UseMediaPipeReturn, MediaPipeResult } from "@/types/camera";
-import type { ErrorCode } from "@/types/events";
+import type { ErrorCode, MappedError } from "@/types/events";
 import {
   initializeHandLandmarker,
   detectHandsFromVideo,
@@ -13,7 +13,7 @@ import {
 export interface UseMediaPipeOptions {
   autoLoad?: boolean;
   onLoaded?: () => void;
-  onError?: (error: { code: ErrorCode; message: string }) => void;
+  onError?: (error: MappedError) => void;
 }
 
 /**
@@ -38,6 +38,22 @@ export function useMediaPipe(
   const hasRequestedLoadRef = useRef<boolean>(false);
 
   /**
+   * Callbacks live in refs so inline arrow functions from a parent re-render do
+   * not change `loadMediaPipe`'s identity, which would restart the load effect
+   * and strand `isLoading` on a dropped in-flight promise.
+   */
+  const onLoadedRef = useRef<UseMediaPipeOptions["onLoaded"]>(onLoaded);
+  const onErrorRef = useRef<UseMediaPipeOptions["onError"]>(onError);
+
+  useEffect(() => {
+    onLoadedRef.current = onLoaded;
+  }, [onLoaded]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  /**
    * Kick off model initialization.
    *
    * The loader is a singleton with its own promise cache, so an already
@@ -57,8 +73,10 @@ export function useMediaPipe(
         setIsLoaded(true);
         setIsLoading(false);
         setLoadingProgress(100);
+        setError(null);
+        setErrorCode(null);
 
-        onLoaded?.();
+        onLoadedRef.current?.();
       })
       .catch((err: unknown) => {
         if (!isMountedRef.current) return;
@@ -69,15 +87,29 @@ export function useMediaPipe(
         setIsLoading(false);
         setIsLoaded(false);
 
-        onError?.(mapped);
+        onErrorRef.current?.(mapped);
       });
-  }, [onLoaded, onError]);
+  }, []);
+
+  /**
+   * Retry a failed load (SRD §6.3: "show retry button" when the model fails to
+   * download). Clears the once-per-mount guard so a subsequent failure can be
+   * retried again.
+   */
+  const retry = useCallback(() => {
+    hasRequestedLoadRef.current = true;
+    setIsLoading(true);
+    setError(null);
+    setErrorCode(null);
+    setLoadingProgress(0);
+    loadMediaPipe();
+  }, [loadMediaPipe]);
 
   useEffect(() => {
     isMountedRef.current = true;
 
     // Load at most once per mount: re-running after a failure would retry
-    // forever without backoff.
+    // forever without backoff. Recovery is explicit via `retry()`.
     if (autoLoad && !hasRequestedLoadRef.current) {
       hasRequestedLoadRef.current = true;
       loadMediaPipe();
@@ -89,9 +121,9 @@ export function useMediaPipe(
   }, [autoLoad, loadMediaPipe]);
 
   const detect = useCallback(
-    (video: HTMLVideoElement): MediaPipeResult | null => {
+    (video: HTMLVideoElement, timestampMs?: number): MediaPipeResult | null => {
       if (!landmarkerRef.current) return null;
-      return detectHandsFromVideo(landmarkerRef.current, video);
+      return detectHandsFromVideo(landmarkerRef.current, video, timestampMs);
     },
     []
   );
@@ -103,5 +135,6 @@ export function useMediaPipe(
     error,
     errorCode,
     detect,
+    retry,
   };
 }

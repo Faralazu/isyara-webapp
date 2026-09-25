@@ -2,6 +2,7 @@ import { Camera, Cpu, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TOTAL_FEATURES } from "@/lib/tensorflow/normalize";
 
 export interface ArchitectureStep {
   step: string;
@@ -23,7 +24,7 @@ export const HOW_IT_WORKS_STEPS: ArchitectureStep[] = [
   {
     step: "02",
     icon: Cpu,
-    title: "Ekstraksi 126 Koordinat Fitur",
+    title: `Ekstraksi ${TOTAL_FEATURES} Koordinat Fitur`,
     description:
       "MediaPipe Tasks Vision melacak 21 sendi jari per tangan. Sistem menormalkan koordinat relatif terhadap wrist untuk konsistensi jarak dan sudut pandang.",
     badge: "MediaPipe Vision WASM",

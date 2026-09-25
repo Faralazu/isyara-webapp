@@ -26,8 +26,8 @@ export interface QuizQuestion {
 }
 
 export interface QuizConfig {
-  /** Jumlah soal (default: 10) */
-  totalQuestions: number;
+  /** Jumlah soal (SRD: tetap 10 soal per kuis) */
+  totalQuestions: 10;
 
   /** Durasi waktu per soal dalam detik (default: 15) */
   timePerQuestion: number;

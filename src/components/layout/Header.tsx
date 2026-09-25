@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Menu, X, Globe } from "lucide-react";
 import { GithubIcon, IsyaraLogo } from "@/components/ui/icons";
+import { APP_NAME, APP_TAGLINE, GITHUB_REPO_URL } from "@/lib/constants";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -23,15 +24,15 @@ export function Header() {
         <Link
           href="/"
           className="group flex items-center gap-3 font-semibold text-lg tracking-tight transition-opacity hover:opacity-90 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg py-1 px-1.5"
-          aria-label="Isyara - Beranda"
+          aria-label={`${APP_NAME} - Beranda`}
         >
           <IsyaraLogo className="size-8 transition-transform duration-200 group-hover:scale-105 shadow-xs" />
           <div className="flex flex-col">
             <span className="font-extrabold text-lg text-foreground tracking-tight leading-none">
-              Isyara
+              {APP_NAME}
             </span>
             <span className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase mt-0.5">
-              BISINDO AI
+              {APP_TAGLINE}
             </span>
           </div>
         </Link>
@@ -43,24 +44,28 @@ export function Header() {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-2">
-          {/* Bilingual Indicator / Switcher (MOD-I18N ready) */}
+          {/* Bilingual Indicator / Switcher (MOD-I18N) */}
           <button
             type="button"
             onClick={toggleLanguage}
-            title={locale === "id" ? "Beralih ke English" : "Switch to Bahasa Indonesia"}
+            title={
+              locale === "id"
+                ? "Beralih ke English (segera hadir)"
+                : "Switch to Bahasa Indonesia (coming soon)"
+            }
             aria-label={`Ganti bahasa. Saat ini: ${locale === "id" ? "Bahasa Indonesia" : "English"}`}
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
               "h-8 px-2 text-xs font-semibold gap-1 text-muted-foreground hover:text-foreground"
             )}
           >
-            <Globe className="size-3.5" />
+            <Globe className="size-3.5" aria-hidden="true" />
             <span className="uppercase">{locale}</span>
           </button>
 
           {/* GitHub Repository Link */}
           <a
-            href="https://github.com/Faralazu/isyara-webapp"
+            href={GITHUB_REPO_URL}
             target="_blank"
             rel="noreferrer"
             aria-label="Buka repository Isyara di GitHub"
@@ -109,7 +114,7 @@ export function Header() {
 
           <div className="pt-3 border-t border-border/40 flex items-center justify-between">
             <a
-              href="https://github.com/Faralazu/isyara-webapp"
+              href={GITHUB_REPO_URL}
               target="_blank"
               rel="noreferrer"
               className={cn(

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BookOpen, Award, Flame, Play, HelpCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getLearnPreviewLetters, getSignTypeLabel } from "@/lib/dictionary/data";
 
 export const metadata: Metadata = {
   title: "Modul Belajar BISINDO",
@@ -10,16 +11,7 @@ export const metadata: Metadata = {
     "Pelajari alfabet Bahasa Isyarat Indonesia (BISINDO) langkah demi langkah, ikuti tantangan latihan kamera, dan uji kemampuanmu di kuis interaktif.",
 };
 
-const SAMPLE_ALPHABET = [
-  { letter: "A", type: "two-handed", difficulty: "easy" },
-  { letter: "B", type: "two-handed", difficulty: "easy" },
-  { letter: "C", type: "two-handed", difficulty: "easy" },
-  { letter: "D", type: "two-handed", difficulty: "easy" },
-  { letter: "E", type: "two-handed", difficulty: "medium" },
-  { letter: "I", type: "one-handed", difficulty: "easy" },
-  { letter: "L", type: "one-handed", difficulty: "easy" },
-  { letter: "O", type: "two-handed", difficulty: "easy" },
-];
+const SAMPLE_ALPHABET = getLearnPreviewLetters();
 
 export default function LearnPage() {
   return (
@@ -178,15 +170,15 @@ export default function LearnPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
           {SAMPLE_ALPHABET.map((item) => (
             <Link
-              key={item.letter}
-              href={`/dictionary#letter-${item.letter}`}
+              key={item.id}
+              href={`/dictionary#letter-${item.id}`}
               className="group flex flex-col items-center justify-center p-3.5 rounded-xl border border-border/70 bg-secondary/40 hover:border-primary/50 hover:bg-card transition-all text-center"
             >
               <span className="text-2xl font-black text-foreground group-hover:scale-105 transition-transform">
-                {item.letter}
+                {item.id}
               </span>
               <span className="mt-1 text-[11px] text-muted-foreground font-medium">
-                {item.type === "two-handed" ? "2 Tangan" : "1 Tangan"}
+                {getSignTypeLabel(item.type)}
               </span>
             </Link>
           ))}

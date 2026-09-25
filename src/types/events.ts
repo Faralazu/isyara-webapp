@@ -31,6 +31,15 @@ export type ErrorCode =
   | "E-MP-002"  // WebGL Not Supported
   | "E-STOR-001"; // LocalStorage Full
 
+/**
+ * Standard result shape of the error mappers (`mapCameraError`,
+ * `mapMediaPipeError`, …) grounded in the SRD §4.3 catalog.
+ */
+export interface MappedError {
+  code: ErrorCode;
+  message: string;
+}
+
 export type LogLevel = "DEBUG" | "INFO" | "WARN" | "ERROR";
 
 export interface LogEntry {

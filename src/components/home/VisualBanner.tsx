@@ -3,50 +3,52 @@
 import { useState } from "react";
 import { Eye, Zap, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { findSign, getSignTypeLabel, type BisindoLetter } from "@/lib/dictionary/data";
+import {
+  FEATURES_PER_HAND,
+  LANDMARKS_PER_HAND,
+  TOTAL_FEATURES,
+} from "@/lib/tensorflow/normalize";
+
+/**
+ * Simulated inference metrics for the landing-page demo.
+ * Letter content comes from the shared BISINDO dataset, so the demo can never
+ * drift from the Dictionary page. Only the numbers below are mock data.
+ */
+const SIMULATION_METRICS: Record<string, { confidence: number; inferenceTimeMs: number }> = {
+  A: { confidence: 97.4, inferenceTimeMs: 32 },
+  B: { confidence: 96.1, inferenceTimeMs: 35 },
+  I: { confidence: 98.9, inferenceTimeMs: 28 },
+  L: { confidence: 99.2, inferenceTimeMs: 29 },
+};
 
 export interface SampleSign {
   letter: string;
   name: string;
-  type: "one-handed" | "two-handed";
+  type: BisindoLetter["type"];
   confidence: number;
-  latencyMs: number;
+  inferenceTimeMs: number;
   description: string;
 }
 
-export const SAMPLE_SIGNS: SampleSign[] = [
-  {
-    letter: "A",
-    name: "Huruf A",
-    type: "two-handed",
-    confidence: 97.4,
-    latencyMs: 32,
-    description: "Tangan kiri membentuk telapak tegak, jari telunjuk kanan menyentuh pangkal ibu jari kiri.",
-  },
-  {
-    letter: "B",
-    name: "Huruf B",
-    type: "two-handed",
-    confidence: 96.1,
-    latencyMs: 35,
-    description: "Kedua tangan membentuk lingkaran mirip dua loop bersentuhan di tengah dada.",
-  },
-  {
-    letter: "I",
-    name: "Huruf I",
-    type: "one-handed",
-    confidence: 98.9,
-    latencyMs: 28,
-    description: "Satu tangan mengepal dengan jari kelingking tegak lurus ke atas.",
-  },
-  {
-    letter: "L",
-    name: "Huruf L",
-    type: "one-handed",
-    confidence: 99.2,
-    latencyMs: 29,
-    description: "Satu tangan membentuk sudut 90 derajat dengan ibu jari dan jari telunjuk terbuka.",
-  },
-];
+/** Demo signs: dictionary content + simulated metrics. */
+export const SAMPLE_SIGNS: SampleSign[] = Object.entries(SIMULATION_METRICS).flatMap(
+  ([letter, metrics]) => {
+    const sign = findSign(letter);
+    if (!sign) return [];
+
+    return [
+      {
+        letter: sign.id,
+        name: sign.nameId,
+        type: sign.type,
+        confidence: metrics.confidence,
+        inferenceTimeMs: metrics.inferenceTimeMs,
+        description: sign.descriptionId,
+      },
+    ];
+  }
+);
 
 export function VisualBanner() {
   const [activeSign, setActiveSign] = useState<SampleSign>(SAMPLE_SIGNS[0]);
@@ -61,7 +63,7 @@ export function VisualBanner() {
             <span>Simulasi Landmark MediaPipe</span>
           </div>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            21 Sendi Jari per Tangan
+            {LANDMARKS_PER_HAND} Sendi Jari per Tangan
           </span>
         </div>
 
@@ -99,11 +101,15 @@ export function VisualBanner() {
           {/* Top Camera Overlay Info */}
           <div className="relative z-10 flex items-center justify-between text-[11px] text-stone-400 font-mono">
             <div className="flex items-center gap-2">
-              <span className="text-rose-400 animate-pulse font-bold">● REC</span>
+              <span aria-hidden="true" className="text-rose-400 animate-pulse font-bold">
+                ● REC
+              </span>
               <span>640×480 • 30 FPS</span>
             </div>
             <div className="rounded bg-stone-900 px-2 py-0.5 border border-stone-800 text-stone-300">
-              {activeSign.type === "two-handed" ? "2 Tangan (126 Coords)" : "1 Tangan (63 Coords)"}
+              {activeSign.type === "two-handed"
+                ? `2 Tangan (${TOTAL_FEATURES} Coords)`
+                : `1 Tangan (${FEATURES_PER_HAND} Coords)`}
             </div>
           </div>
 
@@ -111,6 +117,7 @@ export function VisualBanner() {
           <div className="relative z-10 my-auto flex items-center justify-center py-2">
             <svg
               viewBox="0 0 400 240"
+              role="img"
               className="w-full max-w-[340px] h-auto drop-shadow-[0_0_12px_rgba(59,130,246,0.5)]"
               aria-label={`Visualisasi skeleton tangan untuk isyarat ${activeSign.letter}`}
             >
@@ -238,7 +245,7 @@ export function VisualBanner() {
           <div className="relative z-10 flex items-center justify-between text-[11px] text-zinc-400 border-t border-zinc-800/80 pt-2 font-mono">
             <span className="flex items-center gap-1.5">
               <Eye className="size-3 text-blue-400" />
-              <span>Tracking 21 Keypoints</span>
+              <span>Tracking {LANDMARKS_PER_HAND} Keypoints</span>
             </span>
             <span className="text-zinc-500">Normalisasi Relatif ke Wrist</span>
           </div>
@@ -254,7 +261,7 @@ export function VisualBanner() {
               <span
                 className="rounded-md bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground"
               >
-                {activeSign.type === "two-handed" ? "2 Tangan" : "1 Tangan"}
+                {getSignTypeLabel(activeSign.type)}
               </span>
             </div>
 
@@ -297,7 +304,7 @@ export function VisualBanner() {
               <div>
                 <div className="text-[10px] text-muted-foreground">Latensi Inference</div>
                 <div className="text-xs font-bold text-foreground font-mono">
-                  {activeSign.latencyMs} ms
+                  {activeSign.inferenceTimeMs} ms
                 </div>
               </div>
             </div>
