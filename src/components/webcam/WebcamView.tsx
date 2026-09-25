@@ -16,6 +16,12 @@ import { useWebcam } from "@/hooks/useWebcam";
 import type { UseWebcamReturn } from "@/types/camera";
 import { cn } from "@/lib/utils";
 
+/** Context handed to a render-prop `children` slot (e.g. CanvasOverlay). */
+export interface WebcamViewSlot {
+  /** Whether the video is currently displayed mirrored (selfie view). */
+  mirrored: boolean;
+}
+
 export interface WebcamViewProps {
   /** Optional external useWebcam hook instance */
   webcam?: UseWebcamReturn;
@@ -29,8 +35,11 @@ export interface WebcamViewProps {
   showControls?: boolean;
   /** Callback triggered once camera metadata is loaded and stream is active */
   onReady?: (video: HTMLVideoElement) => void;
-  /** Optional slot for CanvasOverlay (skeleton MediaPipe) */
-  children?: React.ReactNode;
+  /**
+   * Optional slot for the MediaPipe skeleton overlay. Accepts either a node or
+   * a render prop that receives the live mirror state and video ref.
+   */
+  children?: React.ReactNode | ((slot: WebcamViewSlot) => React.ReactNode);
   /** Custom container class name */
   className?: string;
 }
@@ -182,7 +191,9 @@ export function WebcamView({
         {/* Children Slot (CanvasOverlay skeleton MediaPipe) */}
         {status === "active" && children && (
           <div className="absolute inset-0 pointer-events-none z-10">
-            {children}
+            {typeof children === "function"
+              ? children({ mirrored: isMirrored })
+              : children}
           </div>
         )}
 

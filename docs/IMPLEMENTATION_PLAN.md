@@ -98,8 +98,8 @@
 - [x] Landing page dengan hero section & theme showcase
 - [x] Webcam component (permission handler, video stream)
 - [x] MediaPipe Hand Landmarker integration (Dual-hand detection, max 2 hands)
-- [ ] Canvas overlay untuk menggambar visual skeleton 2 tangan di atas webcam
-- [ ] Basic navigation & routing (Translate, Learn, Dictionary)
+- [x] Canvas overlay untuk menggambar visual skeleton 2 tangan di atas webcam
+- [x] Basic navigation & routing (Translate, Learn, Dictionary)
 - [ ] Testing framework setup (Vitest + sample unit test)
 
 ### Phase 2: Core ML (Day 8-16) 🧠
@@ -144,7 +144,7 @@
 | **3** | 24 Sep | 2 jam | Landing page / Hero section: visual banner, deskripsi visi BISINDO, CTA button | Landing page modern & responsif |
 | **4** | 25 Sep | 2 jam | Webcam component: minta izin kamera, tampilkan stream di `<video>`, penanganan status permission & error | Webcam view stabil di halaman Translate |
 | **5** | 26 Sep | 2 jam | Integrate MediaPipe Hand Landmarker: load model WASM, konfigurasi `max_num_hands: 2`, console.log koordinat 2 tangan | Deteksi 2 tangan (2×21 landmark) aktif |
-| **6** | 27 Sep | 2 jam | Canvas overlay: render skeleton 2 tangan dengan pembeda warna tangan kiri & kanan | Overlay visual skeleton real-time |
+| **6** | 27 Sep | 2 jam | Canvas overlay: render skeleton 2 tangan dengan pembeda warna tangan kiri & kanan | ✅ Overlay visual skeleton real-time (`handSkeleton.ts` + `CanvasOverlay.tsx`) |
 | **7** | 28 Sep | 1.5 jam | Setup **Vitest** testing framework, tulis unit test pertama untuk helper normalisasi, review & refactor kode Minggu 1 | Vitest aktif + test passing + repo bersih |
 
 ---
@@ -226,7 +226,7 @@ isyara/
 │   ├── components/
 │   │   ├── ui/                   # shadcn/ui components (@base-ui/react)
 │   │   ├── webcam/
-│   │   │   ├── WebcamView.tsx    # Video stream component
+│   │   │   ├── WebcamView.tsx    # Video stream component (+ render-prop slot)
 │   │   │   ├── CanvasOverlay.tsx # Dual-hand landmark drawing
 │   │   │   └── PredictionDisplay.tsx
 │   │   ├── dictionary/
@@ -250,7 +250,8 @@ isyara/
 │   │   └── useTheme.ts           # Theme toggle hook
 │   ├── lib/
 │   │   ├── mediapipe/
-│   │   │   └── handLandmarker.ts # MediaPipe init (max_num_hands: 2)
+│   │   │   ├── handLandmarker.ts # MediaPipe init (max_num_hands: 2)
+│   │   │   └── handSkeleton.ts   # 21-landmark topology, colours, canvas renderer
 │   │   ├── tensorflow/
 │   │   │   └── classifier.ts     # Model loading & dual-hand prediction
 │   │   ├── data/
@@ -265,10 +266,14 @@ isyara/
 │   └── data/
 │       └── landmarks_dualhand.csv
 ├── tests/                        # Vitest unit & integration tests
-│   ├── normalize.test.ts
-│   ├── smoothing.test.ts
-│   ├── quiz.test.ts
-│   └── streak.test.ts
+│   ├── logger.test.ts
+│   ├── utils.test.ts
+│   ├── mediapipe.test.ts
+│   ├── webcam.test.ts
+│   ├── navigation.test.ts
+│   ├── home.test.ts
+│   ├── canvasOverlay.test.ts          # skeleton topology, colours, cover mapping
+│   └── canvasOverlayComponent.test.tsx # CanvasOverlay static markup
 ├── .gitignore
 ├── next.config.ts
 ├── tsconfig.json

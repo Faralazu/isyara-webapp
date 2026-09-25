@@ -37,6 +37,18 @@ Isyara adalah aplikasi web modern yang dirancang untuk menjembatani komunikasi a
 └─────────────────────────────────────────────────────────┘
 ```
 
+### Overlay Skeleton Dual-Hand (aktif)
+
+- `src/lib/mediapipe/handSkeleton.ts` — topologi 21 landmark (`HAND_CONNECTIONS`), palette
+  **Kiri = sky-400** / **Kanan = amber-400**, resolusi sisi tangan, pemetaan `object-cover`
+  (`computeCoverTransform`) dan kompensasi cermin (`x' = 1 - x`), serta renderer kanvas murni.
+- `src/components/webcam/CanvasOverlay.tsx` — kanvas DPR-aware (cap 2×) yang menggambar
+  outline gelap, tulang berwarna, 21 joint dengan halo, dan chip label "Kiri"/"Kanan".
+- `WebcamView` mengekspos slot `children` sebagai **render-prop** `{ mirrored }` agar overlay
+  selalu konsisten dengan toggle cermin di toolbar kamera.
+- `TranslateClient` menyediakan legenda warna dan toggle **Skeleton: On/Off** (mitigasi
+  SRD §6.3 untuk perangkat lambat).
+
 ---
 
 ## 🛠️ Tech Stack
@@ -66,7 +78,7 @@ isyara/
 │   │   ├── dictionary/           # Kartu dan grid kamus
 │   │   └── learn/                # Modul latihan dan kuis
 │   ├── hooks/                    # Custom React hooks (useWebcam, useMediaPipe, dll.)
-│   └── lib/                      # Utilitas, konfigurasi MediaPipe & TF.js
+│   └── lib/                      # Utilitas, konfigurasi MediaPipe, skeleton overlay & TF.js
 ├── training/                     # Pipeline training model Python offline
 └── README.md
 ```

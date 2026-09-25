@@ -10,13 +10,18 @@ import {
   Loader2,
   Layers,
   Cpu,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import Link from "next/link";
 import { useWebcam } from "@/hooks/useWebcam";
 import { useMediaPipe } from "@/hooks/useMediaPipe";
 import { WebcamView } from "@/components/webcam/WebcamView";
-import { buttonVariants } from "@/components/ui/button";
+import { CanvasOverlay } from "@/components/webcam/CanvasOverlay";
+import { getHandStyle, resolveHandSides } from "@/lib/mediapipe/handSkeleton";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 import type { MediaPipeResult } from "@/types/camera";
 
 export function TranslateClient() {
@@ -34,6 +39,7 @@ export function TranslateClient() {
   } = mediaPipe;
 
   const [handResult, setHandResult] = useState<MediaPipeResult | null>(null);
+  const [showSkeleton, setShowSkeleton] = useState<boolean>(true);
   const lastLogTimeRef = useRef<number>(0);
   const animFrameIdRef = useRef<number | null>(null);
 
@@ -55,14 +61,24 @@ export function TranslateClient() {
         if (result && result.landmarks && result.landmarks.length > 0) {
           setHandResult(result);
 
-          // Log dual-hand coordinates to console periodically (~1 per second) as required for Day 5
+          // Throttled structured log (~1 per second) as required for Day 5.
           const now = performance.now();
           if (now - lastLogTimeRef.current > 1000) {
             lastLogTimeRef.current = now;
-            console.log(
-              `🖐️ [BISINDO Hand Landmarker] ${result.landmarks.length} tangan terdeteksi (${result.handedness?.join(", ")}):`,
-              result.landmarks
-            );
+            logger.log({
+              level: "DEBUG",
+              module: "MOD-CAM",
+              event: "HAND_DETECTED",
+              data: {
+                handCount: result.landmarks.length,
+                handedness: result.handedness ?? [],
+                wrist: result.landmarks.map((hand) => ({
+                  x: Number(hand[0]?.x.toFixed(3)),
+                  y: Number(hand[0]?.y.toFixed(3)),
+                  z: Number(hand[0]?.z.toFixed(3)),
+                })),
+              },
+            });
           }
         } else {
           setHandResult(null);
@@ -92,11 +108,25 @@ export function TranslateClient() {
 
   const numHands = handResult?.landmarks?.length || 0;
   const handednessList = handResult?.handedness || [];
+  const handSides = resolveHandSides(handednessList, numHands);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      {/* Left: Camera Stream Viewport */}
-      <WebcamView webcam={webcam} className="lg:col-span-2" />
+      {/* Left: Camera Stream Viewport + Dual-Hand Skeleton Overlay */}
+      <WebcamView webcam={webcam} className="lg:col-span-2">
+        {({ mirrored }) => (
+          <CanvasOverlay
+            result={handResult}
+            videoRef={videoRef}
+            mirrored={mirrored}
+            showLabels={showSkeleton}
+            className={cn(
+              "transition-opacity duration-200",
+              showSkeleton ? "opacity-100" : "opacity-0"
+            )}
+          />
+        )}
+      </WebcamView>
 
       {/* Right: MediaPipe & Hand Tracking Inspector Panel */}
       <div className="flex flex-col gap-6">
@@ -202,14 +232,76 @@ export function TranslateClient() {
                     ? "2 Tangan Terdeteksi (Dual-Hand)"
                     : "1 Tangan Terdeteksi (Single-Hand)"}
                 </span>
-                <span className="text-xs font-medium text-muted-foreground mt-0.5">
-                  Sisi: {handednessList.join(" & ")}
-                </span>
-                <span className="text-[11px] text-muted-foreground font-mono mt-1 bg-secondary px-2 py-0.5 rounded-md border border-border">
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                  {handSides.map((side, idx) => {
+                    const style = getHandStyle(side);
+                    return (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-0.5 text-[11px] font-semibold text-foreground"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="size-2 rounded-full"
+                          style={{ backgroundColor: style.bone }}
+                        />
+                        <span>
+                          Tangan {idx + 1}: {style.label}
+                        </span>
+                        <span className="font-mono text-[10px] font-normal text-muted-foreground">
+                          {handednessList[idx] || "N/A"}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+                <span className="text-[11px] text-muted-foreground font-mono mt-2 bg-secondary px-2 py-0.5 rounded-md border border-border">
                   {numHands * 21} Titik Koordinat 3D Terlacak
                 </span>
               </div>
             )}
+          </div>
+
+          {/* Skeleton Overlay Controls & Colour Legend */}
+          <div className="w-full flex items-center justify-between gap-3 rounded-lg border border-border bg-secondary/40 px-3 py-2 mb-4">
+            <div className="flex items-center gap-3 text-[11px] font-medium text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 rounded-full"
+                  style={{ backgroundColor: getHandStyle("left").bone }}
+                />
+                Kiri
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 rounded-full"
+                  style={{ backgroundColor: getHandStyle("right").bone }}
+                />
+                Kanan
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              onClick={() => setShowSkeleton((prev) => !prev)}
+              aria-pressed={showSkeleton}
+              title={
+                showSkeleton
+                  ? "Sembunyikan overlay skeleton"
+                  : "Tampilkan overlay skeleton"
+              }
+              className="h-6 px-2 text-[10px] uppercase font-bold text-muted-foreground hover:text-foreground"
+            >
+              {showSkeleton ? (
+                <Eye className="size-3.5 mr-1" />
+              ) : (
+                <EyeOff className="size-3.5 mr-1" />
+              )}
+              <span>Skeleton: {showSkeleton ? "On" : "Off"}</span>
+            </Button>
           </div>
 
           {/* Live Coordinate Preview when hands detected */}
@@ -219,17 +311,20 @@ export function TranslateClient() {
                 <span>Contoh Koordinat Wrist (Titik 0)</span>
                 <span>x, y, z</span>
               </div>
-              {handResult.landmarks.map((hand, idx) => (
-                <div key={idx} className="flex justify-between pt-0.5">
-                  <span className="text-sky-400">
-                    Hand {idx + 1} ({handResult.handedness?.[idx] || "N/A"}):
-                  </span>
-                  <span>
-                    {hand[0]?.x.toFixed(2)}, {hand[0]?.y.toFixed(2)},{" "}
-                    {hand[0]?.z.toFixed(2)}
-                  </span>
-                </div>
-              ))}
+              {handResult.landmarks.map((hand, idx) => {
+                const style = getHandStyle(handSides[idx] ?? "unknown");
+                return (
+                  <div key={idx} className="flex justify-between pt-0.5">
+                    <span style={{ color: style.bone }}>
+                      Hand {idx + 1} ({style.label}):
+                    </span>
+                    <span>
+                      {hand[0]?.x.toFixed(2)}, {hand[0]?.y.toFixed(2)},{" "}
+                      {hand[0]?.z.toFixed(2)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
 
