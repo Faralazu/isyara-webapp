@@ -23,6 +23,13 @@ export interface CanvasOverlayProps {
   /** Whether the video is displayed mirrored (selfie view). Default: true. */
   mirrored?: boolean;
 
+  /**
+   * When false the canvas is cleared and drawing is skipped entirely, so the
+   * render cost drops to zero (SRD §6.3 mitigation for slow devices).
+   * Default: true.
+   */
+  enabled?: boolean;
+
   /** Bone thickness in CSS px. Default: 3. */
   lineWidth?: number;
 
@@ -51,6 +58,7 @@ export function CanvasOverlay({
   result,
   videoRef,
   mirrored = true,
+  enabled = true,
   lineWidth = 3,
   showLabels = true,
   className,
@@ -81,6 +89,8 @@ export function CanvasOverlay({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssWidth, cssHeight);
 
+    if (!enabled) return;
+
     const hands = result?.landmarks;
     if (!hands || hands.length === 0) return;
 
@@ -109,7 +119,7 @@ export function CanvasOverlay({
       showLabels,
       canvasSize: { width: cssWidth, height: cssHeight },
     });
-  }, [result, videoRef, mirrored, lineWidth, showLabels]);
+  }, [result, videoRef, mirrored, enabled, lineWidth, showLabels]);
 
   return (
     <canvas

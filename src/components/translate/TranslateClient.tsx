@@ -119,6 +119,7 @@ export function TranslateClient() {
             result={handResult}
             videoRef={videoRef}
             mirrored={mirrored}
+            enabled={showSkeleton}
             showLabels={showSkeleton}
             className={cn(
               "transition-opacity duration-200",

@@ -61,4 +61,15 @@ describe("CanvasOverlay markup (WebcamView child slot)", () => {
     expect(markup).toContain("opacity-0");
     expect(markup).toContain("transition-opacity");
   });
+
+  it("should accept the disabled state used by the skeleton toggle", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(CanvasOverlay, {
+        result: makeResult(),
+        enabled: false,
+      })
+    );
+
+    expect(markup).toContain("<canvas");
+  });
 });

@@ -44,7 +44,7 @@
 
 | Pemeriksaan | Perintah | Status |
 | :--- | :--- | :---: |
-| Unit & integration test | `npm.cmd test` | ✅ 70/70 lulus (8 suite) |
+| Unit & integration test | `npm.cmd test` | ✅ 71/71 lulus (8 suite) |
 | Lint (ESLint 9 + eslint-config-next) | `npm.cmd run lint` | ✅ 0 error, 0 warning |
 | Type check | `npx.cmd tsc --noEmit` | ✅ bersih |
 | Production build | `npm.cmd run build` | ✅ sukses (5 rute statis) |
@@ -57,9 +57,9 @@ Rincian 8 suite pengujian:
 5. `tests/navigation.test.ts` (3 tests)
 6. `tests/home.test.ts` (6 tests)
 7. `tests/canvasOverlay.test.ts` (22 tests) — topologi skeleton, resolusi Kiri/Kanan, pemetaan `object-cover` + mirror, geometry builder, renderer kanvas
-8. `tests/canvasOverlayComponent.test.tsx` (4 tests) — markup `CanvasOverlay` via render statis
+8. `tests/canvasOverlayComponent.test.tsx` (5 tests) — markup `CanvasOverlay` via render statis
 
-**Aturan regresi**: setiap perubahan kode wajib mempertahankan 70 tes tetap lulus **dan** lint tetap 0 error sebelum dianggap selesai.
+**Aturan regresi**: setiap perubahan kode wajib mempertahankan 71 tes tetap lulus **dan** lint tetap 0 error sebelum dianggap selesai.
 
 ---
 
