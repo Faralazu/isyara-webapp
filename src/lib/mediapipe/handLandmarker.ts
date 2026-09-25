@@ -3,9 +3,36 @@
  * Grounded in SRD Section 2.1, 4.1 (Contract 2), 4.3 (Error Codes), and 7.1/7.2 (Resilience & Caching)
  */
 
+import type { HandLandmarker } from "@mediapipe/tasks-vision";
 import type { HandLandmark, MediaPipeResult } from "@/types/camera";
 import type { ErrorCode } from "@/types/events";
 import { logger } from "@/lib/logger";
+
+/**
+ * Minimal structural shape of MediaPipe's `HandLandmarkerResult` that this
+ * module consumes. Declared structurally (rather than importing the full
+ * interface) so that detection output can be unit-tested with lightweight
+ * fixtures that omit `worldLandmarks` / `handednesses`.
+ */
+export interface RawLandmarkResult {
+  landmarks?: ReadonlyArray<
+    ReadonlyArray<{ x: number; y: number; z: number }>
+  > | null;
+  handedness?: ReadonlyArray<
+    ReadonlyArray<{ categoryName?: string }>
+  > | null;
+}
+
+/**
+ * Minimal structural contract needed to run per-frame video detection.
+ * `HandLandmarker` satisfies this; so do test doubles.
+ */
+export interface VideoHandLandmarker {
+  detectForVideo: (
+    videoFrame: HTMLVideoElement,
+    timestamp: number
+  ) => RawLandmarkResult;
+}
 
 export const MEDIAPIPE_WASM_CDN =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm";
@@ -21,22 +48,22 @@ export const MEDIAPIPE_CONFIG = {
   runningMode: "VIDEO" as const,
 };
 
-let cachedHandLandmarker: any = null;
-let initPromise: Promise<any> | null = null;
+let cachedHandLandmarker: HandLandmarker | null = null;
+let initPromise: Promise<HandLandmarker> | null = null;
 
 /**
  * Format raw MediaPipe HandLandmarkerResult into clean, typed MediaPipeResult
  */
 export function formatMediaPipeResult(
-  rawResult: any,
+  rawResult: RawLandmarkResult | null | undefined,
   timestamp: number = performance.now()
 ): MediaPipeResult | null {
   if (!rawResult || !rawResult.landmarks || rawResult.landmarks.length === 0) {
     return null;
   }
 
-  const landmarks: HandLandmark[][] = rawResult.landmarks.map((hand: any[]) =>
-    hand.map((pt: any) => ({
+  const landmarks: HandLandmark[][] = rawResult.landmarks.map((hand) =>
+    hand.map((pt) => ({
       x: Number(pt.x),
       y: Number(pt.y),
       z: Number(pt.z),
@@ -44,7 +71,7 @@ export function formatMediaPipeResult(
   );
 
   const handedness: string[] = (rawResult.handedness || []).map(
-    (cats: any[]) => cats[0]?.categoryName || "Right"
+    (cats) => cats[0]?.categoryName || "Right"
   );
 
   return {
@@ -87,7 +114,7 @@ export function mapMediaPipeError(err: unknown): {
  */
 export async function initializeHandLandmarker(
   onProgress?: (progress: number) => void
-): Promise<any> {
+): Promise<HandLandmarker> {
   if (typeof window === "undefined") {
     throw new Error("MediaPipe HandLandmarker can only be initialized in browser context.");
   }
@@ -121,7 +148,7 @@ export async function initializeHandLandmarker(
       onProgress?.(60);
 
       // Attempt initialization with GPU delegate first
-      let landmarker: any = null;
+      let landmarker: HandLandmarker;
       try {
         landmarker = await HandLandmarker.createFromOptions(vision, {
           baseOptions: {
@@ -200,7 +227,7 @@ export async function initializeHandLandmarker(
  * Execute hand detection from HTMLVideoElement frame
  */
 export function detectHandsFromVideo(
-  landmarker: any,
+  landmarker: VideoHandLandmarker | null,
   video: HTMLVideoElement,
   timestampMs: number = performance.now()
 ): MediaPipeResult | null {
@@ -238,7 +265,7 @@ export function detectHandsFromVideo(
 export function resetHandLandmarker(): void {
   if (cachedHandLandmarker) {
     try {
-      cachedHandLandmarker.close?.();
+      cachedHandLandmarker.close();
     } catch {
       // ignore close errors
     }

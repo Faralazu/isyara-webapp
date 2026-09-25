@@ -269,9 +269,20 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
   useEffect(() => {
     isMountedRef.current = true;
 
+    // Deferred to a microtask: `startCamera()` flips status synchronously, and
+    // applying state directly inside the effect body would cascade renders.
+    // (Same rationale as the queueMicrotask guard in TranslateClient.)
     if (autoStart) {
-      startCamera();
+      queueMicrotask(() => {
+        if (isMountedRef.current) {
+          startCamera();
+        }
+      });
     }
+
+    // Capture the node this effect is responsible for; reading the ref inside
+    // the cleanup could observe a different element by then.
+    const videoElement = videoRef.current;
 
     return () => {
       isMountedRef.current = false;
@@ -285,8 +296,8 @@ export function useWebcam(options: UseWebcamOptions = {}): UseWebcamReturn {
         });
         streamRef.current = null;
       }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
+      if (videoElement) {
+        videoElement.srcObject = null;
       }
     };
   }, [autoStart, startCamera]);

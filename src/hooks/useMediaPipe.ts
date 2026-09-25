@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import type { HandLandmarker } from "@mediapipe/tasks-vision";
 import type { UseMediaPipeReturn, MediaPipeResult } from "@/types/camera";
 import type { ErrorCode } from "@/types/events";
 import {
@@ -24,65 +25,68 @@ export function useMediaPipe(
 ): UseMediaPipeReturn {
   const { autoLoad = true, onLoaded, onError } = options;
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // When autoLoad is enabled the model is loading from the very first render,
+  // so the initial state already reflects that (no setState needed on mount).
+  const [isLoading, setIsLoading] = useState<boolean>(autoLoad);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [loadingProgress, setLoadingProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<ErrorCode | null>(null);
 
-  const landmarkerRef = useRef<any>(null);
+  const landmarkerRef = useRef<HandLandmarker | null>(null);
   const isMountedRef = useRef<boolean>(true);
+  const hasRequestedLoadRef = useRef<boolean>(false);
 
-  const loadMediaPipe = useCallback(async () => {
-    if (landmarkerRef.current) {
-      setIsLoaded(true);
-      setLoadingProgress(100);
-      return;
-    }
+  /**
+   * Kick off model initialization.
+   *
+   * The loader is a singleton with its own promise cache, so an already
+   * initialized instance resolves immediately. All state updates happen in
+   * async continuations: applying them synchronously would cascade renders.
+   */
+  const loadMediaPipe = useCallback(() => {
+    initializeHandLandmarker((progress) => {
+      if (isMountedRef.current) {
+        setLoadingProgress(progress);
+      }
+    })
+      .then((landmarker) => {
+        if (!isMountedRef.current) return;
 
-    setIsLoading(true);
-    setError(null);
-    setErrorCode(null);
+        landmarkerRef.current = landmarker;
+        setIsLoaded(true);
+        setIsLoading(false);
+        setLoadingProgress(100);
 
-    try {
-      const landmarker = await initializeHandLandmarker((progress) => {
-        if (isMountedRef.current) {
-          setLoadingProgress(progress);
-        }
+        onLoaded?.();
+      })
+      .catch((err: unknown) => {
+        if (!isMountedRef.current) return;
+
+        const mapped = mapMediaPipeError(err);
+        setError(mapped.message);
+        setErrorCode(mapped.code);
+        setIsLoading(false);
+        setIsLoaded(false);
+
+        onError?.(mapped);
       });
-
-      if (!isMountedRef.current) return;
-
-      landmarkerRef.current = landmarker;
-      setIsLoaded(true);
-      setIsLoading(false);
-      setLoadingProgress(100);
-
-      onLoaded?.();
-    } catch (err) {
-      if (!isMountedRef.current) return;
-
-      const mapped = mapMediaPipeError(err);
-      setError(mapped.message);
-      setErrorCode(mapped.code);
-      setIsLoading(false);
-      setIsLoaded(false);
-
-      onError?.(mapped);
-    }
   }, [onLoaded, onError]);
 
   useEffect(() => {
     isMountedRef.current = true;
 
-    if (autoLoad && !isLoaded && !isLoading) {
+    // Load at most once per mount: re-running after a failure would retry
+    // forever without backoff.
+    if (autoLoad && !hasRequestedLoadRef.current) {
+      hasRequestedLoadRef.current = true;
       loadMediaPipe();
     }
 
     return () => {
       isMountedRef.current = false;
     };
-  }, [autoLoad, isLoaded, isLoading, loadMediaPipe]);
+  }, [autoLoad, loadMediaPipe]);
 
   const detect = useCallback(
     (video: HTMLVideoElement): MediaPipeResult | null => {
